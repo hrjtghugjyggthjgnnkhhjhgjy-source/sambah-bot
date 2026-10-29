@@ -50,7 +50,6 @@ FALLBACK_LINK_AMIRALI = "https://ble.ir/join/AvWobZ1w2R"
 FALLBACK_LINK_MAJID = "https://ble.ir/join/2PvmzANtGf"
 FALLBACK_LINK_TITAP = "https://ble.ir/join/CaKiHc9jYm"
 
-# دیکشنری برای نگه داشتن آخرین لینک‌های هر گپ
 current_links = {
     CHAT_ID_SAMBAH_B: FALLBACK_LINK_SAMBAH_B,
     CHAT_ID_ETTELA_B: FALLBACK_LINK_ETTELA_B,
@@ -189,8 +188,8 @@ print("\n🤖 ربات روشن شد...")
 
 while True:
     try:
-        # ⚡️ تایم‌اوت رو کردم ۱ ثانیه (حداکثر سرعت ممکن روی سرور رایگان)
-        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 1})
+        # ⚡️ تایم‌اوت صفر یعنی بدون معطلی چک میکنه
+        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 0})
         
         if updates.get("ok") and updates.get("result"):
             for update in updates["result"]:
@@ -231,13 +230,11 @@ while True:
                             report = "🔗 **گزارش لینک‌ها:**\n\n"
                             
                             for c_id, c_name in CHATS_INFO.items():
-                                # ۱. باطل کردن قبلی
                                 revoke_res = send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
                                 if not revoke_res.get("ok"):
                                     report += f"❌ **{c_name}** (ربات ادمین نیست یا دسترسی ندارد)\n"
                                     continue
 
-                                # ۲. ساخت جدید
                                 res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
                                 
                                 if res_new.get("ok"):
@@ -247,9 +244,7 @@ while True:
                                 else:
                                     report += f"❌ **{c_name}** (خطا در ساخت لینک جدید)\n"
                             
-                            # ارسال گزارش به پیوی ادمین
                             send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
-                            # پیام تایید توی گپ
                             send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌ها باطل شدند. گزارش (و لینک‌های جدید) به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
 
                     if "new_chat_members" in msg and chat_id == CHAT_ID_SAMBAH_B:
@@ -258,6 +253,9 @@ while True:
                             user_name = member.get("first_name", "دوست عزیز")
                             if saved_video_id:
                                 send_video_to_target(saved_video_id, user_name)
+
+        # تاخیر خیلی کوچیک برای اینکه سرور بله بن بلاکمون نکنه
+        time.sleep(0.5)
 
     except KeyboardInterrupt:
         break
