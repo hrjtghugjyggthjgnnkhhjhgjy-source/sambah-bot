@@ -10,7 +10,7 @@ if not BOT_TOKEN:
     print("❌ خطا: توکن ربات تنظیم نشده است!")
     exit()
 
-# 🎯 آیدی عددی گپ‌ها (لیست سفید - Whitelist)
+# 🎯 آیدی عددی گپ‌ها
 CHAT_ID_SAMBAH_B = '4884670320'
 CHAT_ID_ETTELA_B = '5900955714'
 CHAT_ID_SAMBAH_A = '4652272518'
@@ -35,7 +35,6 @@ CHATS_INFO = {
     CHAT_ID_TITAP: "پیام تیتاپی ها"
 }
 
-# لیست سفید برای اینکه ربات فقط توی این گپ‌ها بمونه
 ALLOWED_CHATS = list(CHATS_INFO.keys())
 
 FALLBACK_LINK_SAMBAH_B = "https://ble.ir/join/4F2HQJ3rpD"
@@ -105,6 +104,14 @@ def send_request(method, data=None):
             return json.loads(response.read().decode('utf-8'))
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+def is_admin(chat_id, user_id):
+    res = send_request("getChatMember", {"chat_id": chat_id, "user_id": user_id})
+    if res.get("ok"):
+        status = res["result"].get("status")
+        if status in ["creator", "administrator"]:
+            return True
+    return False
 
 def get_link(chat_id):
     res = send_request("exportChatInviteLink", {"chat_id": chat_id})
@@ -181,7 +188,7 @@ print("\n🤖 ربات روشن شد...")
 
 while True:
     try:
-        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 60})
+        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 10}) # ⚡️ سرعت بالا رفت (۱۰ ثانیه)
         if updates.get("ok") and updates.get("result"):
             for update in updates["result"]:
                 last_update_id = update["update_id"]
@@ -189,15 +196,12 @@ while True:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
                     
-                    # ==========================================
-                    # 🚨 سیستم امنیتی: اگه ربات به گپ غیرمجاز اضافه شد، فوراً خارج شو
-                    # ==========================================
+                    # 🚨 سیستم امنیتی: خروج از گپ غیرمجاز
                     if chat_id not in ALLOWED_CHATS:
                         print(f"⚠️ ربات به یک گپ غیرمجاز اضافه شد ({chat_id}). در حال خروج...")
                         send_request("leaveChat", {"chat_id": chat_id})
-                        continue # بقیه پیام‌های این گپ رو نادیده بگیر
+                        continue
                     
-                    # ۱. دریافت فیلم در چت خصوصی
                     if "video" in msg and not msg.get("from", {}).get("is_bot"):
                         with open(VIDEO_CACHE_FILE, 'w') as f:
                             f.write(msg["video"]["file_id"])
@@ -208,34 +212,40 @@ while True:
                         text = msg["text"].strip()
                         user_id = str(msg["from"]["id"]) 
                         
-                        if text == 'لینک' and chat_id == CHAT_ID_SAMBAH_B:
-                            send_request("sendMessage", {
-                                "chat_id": chat_id,
-                                "text": "🔗 **لیست لینک‌های گپ‌های سمباح:**",
-                                "parse_mode": "Markdown",
-                                "reply_markup": get_links_keyboard()
-                            })
-                            print("✅ منوی لینک‌ها ارسال شد.")
-
-                        if text in ['/del_links', 'باطل کردن لینک‌ها'] and chat_id == CHAT_ID_SAMBAH_B:
-                            send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌های قبلی و ساخت لینک‌های جدید..."})
+                        # 🔐 بررسی ادمین بودن برای دستورات (فقط توی گپ سمباح B)
+                        if text in ['لینک', 'لینک ها', '/del_links', 'باطل کردن لینک‌ها'] and chat_id == CHAT_ID_SAMBAH_B:
+                            # اگه کاربر ادمین نبود، بیخیال شو
+                            if not is_admin(chat_id, user_id):
+                                continue 
                             
-                            report = "🔗 **لینک‌های جدید گپ‌ها:**\n\n"
-                            
-                            for c_id, c_name in CHATS_INFO.items():
-                                res_revoke = send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
-                                res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
+                            if text in ['لینک', 'لینک ها']:
+                                send_request("sendMessage", {
+                                    "chat_id": chat_id,
+                                    "text": "🔗 **لیست لینک‌های گپ‌های سمباح:**",
+                                    "parse_mode": "Markdown",
+                                    "reply_markup": get_links_keyboard()
+                                })
+                                print("✅ منوی لینک‌ها ارسال شد.")
                                 
-                                if res_new.get("ok"):
-                                    new_link = res_new["result"]
-                                    current_links[c_id] = new_link 
-                                    report += f"✅ **{c_name}**\n{new_link}\n\n"
-                                else:
-                                    report += f"❌ **{c_name}** (خطا در ساخت لینک - ربات ادمین نیست؟)\n\n"
-                            
-                            send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
-                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌های قبلی باطل شدند و لینک‌های جدید به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
-                            print("✅ لینک‌ها باطل و جدید ساخته شدند.")
+                            elif text in ['/del_links', 'باطل کردن لینک‌ها']:
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌های قبلی و ساخت لینک‌های جدید..."})
+                                
+                                report = "🔗 **لینک‌های جدید گپ‌ها:**\n\n"
+                                
+                                for c_id, c_name in CHATS_INFO.items():
+                                    res_revoke = send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
+                                    res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
+                                    
+                                    if res_new.get("ok"):
+                                        new_link = res_new["result"]
+                                        current_links[c_id] = new_link 
+                                        report += f"✅ **{c_name}**\n{new_link}\n\n"
+                                    else:
+                                        report += f"❌ **{c_name}** (خطا در ساخت لینک - ربات ادمین نیست؟)\n\n"
+                                
+                                send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌های قبلی باطل شدند و لینک‌های جدید به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
+                                print("✅ لینک‌ها باطل و جدید ساخته شدند.")
 
                     if "new_chat_members" in msg and chat_id == CHAT_ID_SAMBAH_B:
                         for member in msg["new_chat_members"]:
