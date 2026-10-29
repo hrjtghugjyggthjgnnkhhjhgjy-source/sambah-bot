@@ -3,6 +3,7 @@ import json
 import uuid
 import time
 import os
+from datetime import datetime
 
 # 🔐 خواندن توکن از محیط سرور
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
@@ -21,6 +22,16 @@ CHAT_ID_VORUDI = '5559869385'
 CHAT_ID_AMIRALI = '4853834278'
 CHAT_ID_MAJID = '5422739931'
 CHAT_ID_TITAP = '5562715565'
+
+# گپ‌هایی که باید شب‌ها قفل بشن
+NIGHT_LOCK_CHATS = {
+    CHAT_ID_VORUDI: "ورودی سمباح",
+    CHAT_ID_DOORHAMI: "دورهمی سمباح",
+    CHAT_ID_AMIRALI: "پیام امیرعلی",
+    CHAT_ID_MAJID: "پیام مجید",
+    CHAT_ID_TITAP: "پیام تیتاپی ها",
+    CHAT_ID_HAMALAT: "حملات سمباح"
+}
 
 CHATS_INFO = {
     CHAT_ID_SAMBAH_B: "گپ سمباح (B)",
@@ -92,7 +103,9 @@ caption_template = """درود {name} ✨
 *10_* هیچکس حق دادن هیچ‌گونه اطلاعاتی از کلن نداره بخصوص لینک دادن و هیچ عضوی بدون اجازه نمیارید هرکس مدنظر بود به ادمینا اطلاع بدید
 
 اگه خوندید و قبول دارید بنویسید قبول دارم ✅
-خوش بگذرونید🚀"""
+خوش بگذرونید🚀
+
+👇 **برای دریافت لینک گپ‌ها، دستور `لینک ها` را ارسال کنید.**"""
 
 def send_request(method, data=None):
     url = f"https://tapi.bale.ai/bot{BOT_TOKEN}/{method}"
@@ -171,6 +184,36 @@ def send_video_to_target(video_file_id, user_name="دوست عزیز"):
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+# ⏰ تابع مدیریت قفل خودکار گپ‌ها
+def manage_night_lock():
+    now = datetime.now()
+    hour = now.hour
+    
+    # ساعت ۱۲ شب تا ۱۲ ظهر یعنی ساعت ۰ تا ۱۱
+    should_lock = (0 <= hour < 12)
+    
+    # تنظیم دسترسی‌ها (اگه قفل باشه، هیچ‌کس نمی‌تونه پیام بفرسته. اگه باز باشه، همه می‌تونن)
+    permissions = {
+        "can_send_messages": not should_lock,
+        "can_send_media_messages": not should_lock,
+        "can_send_other_messages": not should_lock,
+        "can_add_web_page_previews": not should_lock
+    }
+    
+    for c_id, c_name in NIGHT_LOCK_CHATS.items():
+        # ارسال درخواست قفل/باز کردن
+        res = send_request("setChatPermissions", {
+            "chat_id": c_id,
+            "permissions": json.dumps(permissions)
+        })
+        
+        if not res.get("ok"):
+            # اگه خطا داد، توی لاگ سرور چاپ کن
+            print(f"⚠️ خطا در تغییر وضعیت گپ {c_name}: {res.get('description', '')}")
+
+# اجرای اولیه قفل در زمان روشن شدن ربات
+manage_night_lock()
+
 saved_video_id = None
 if os.path.exists(VIDEO_CACHE_FILE):
     with open(VIDEO_CACHE_FILE, 'r') as f:
@@ -186,9 +229,16 @@ else:
 
 print("\n🤖 ربات روشن شد...")
 
+last_lock_check_minute = -1 # برای اینکه هر دقیقه یه بار چک کنه
+
 while True:
     try:
-        # ⚡️ تایم‌اوت صفر یعنی بدون معطلی چک میکنه
+        # ⚡️ چک کردن زمان برای قفل خودکار (هر دقیقه یک بار)
+        current_minute = datetime.now().minute
+        if current_minute != last_lock_check_minute:
+            manage_night_lock()
+            last_lock_check_minute = current_minute
+
         updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 0})
         
         if updates.get("ok") and updates.get("result"):
@@ -211,7 +261,7 @@ while True:
                         text = msg["text"].strip()
                         user_id = str(msg["from"]["id"]) 
                         
-                        # دستور لینک (برای همه آزاده)
+                        # دستور لینک ها (برای همه آزاده)
                         if text in ['لینک', 'لینک ها'] and chat_id == CHAT_ID_SAMBAH_B:
                             send_request("sendMessage", {
                                 "chat_id": chat_id,
@@ -230,11 +280,15 @@ while True:
                             report = "🔗 **گزارش لینک‌ها:**\n\n"
                             
                             for c_id, c_name in CHATS_INFO.items():
+                                # اول لینک رو باطل میکنیم
                                 revoke_res = send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
+                                
                                 if not revoke_res.get("ok"):
-                                    report += f"❌ **{c_name}** (ربات ادمین نیست یا دسترسی ندارد)\n"
+                                    error_msg = revoke_res.get("description", "خطای نامشخص")
+                                    report += f"❌ **{c_name}**\nدلیل: {error_msg}\n\n"
                                     continue
 
+                                # بعد لینک جدید میسازیم
                                 res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
                                 
                                 if res_new.get("ok"):
@@ -242,10 +296,11 @@ while True:
                                     current_links[c_id] = new_link 
                                     report += f"✅ **{c_name}**\n{new_link}\n\n"
                                 else:
-                                    report += f"❌ **{c_name}** (خطا در ساخت لینک جدید)\n"
+                                    report += f"❌ **{c_name}** (خطا در ساخت لینک جدید)\n\n"
                             
+                            # ارسال گزارش دقیق به پیوی ادمین
                             send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
-                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌ها باطل شدند. گزارش (و لینک‌های جدید) به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
+                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌ها باطل شدند. گزارش دقیق به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
 
                     if "new_chat_members" in msg and chat_id == CHAT_ID_SAMBAH_B:
                         for member in msg["new_chat_members"]:
