@@ -36,10 +36,9 @@ CHATS_INFO = {
 }
 
 ALLOWED_CHATS = list(CHATS_INFO.keys())
-
-# لیست ادمین‌های ربات
 BOT_ADMINS = ['724704269', '566594483', '2065233217']
 
+# لینک‌های پشتیبان
 FALLBACK_LINK_SAMBAH_B = "https://ble.ir/join/4F2HQJ3rpD"
 FALLBACK_LINK_ETTELA_B = "https://ble.ir/join/4zejnKnWu5"
 FALLBACK_LINK_SAMBAH_A = "https://ble.ir/join/83tUiWjnM7"
@@ -51,6 +50,7 @@ FALLBACK_LINK_AMIRALI = "https://ble.ir/join/AvWobZ1w2R"
 FALLBACK_LINK_MAJID = "https://ble.ir/join/2PvmzANtGf"
 FALLBACK_LINK_TITAP = "https://ble.ir/join/CaKiHc9jYm"
 
+# دیکشنری برای نگه داشتن آخرین لینک‌های هر گپ
 current_links = {
     CHAT_ID_SAMBAH_B: FALLBACK_LINK_SAMBAH_B,
     CHAT_ID_ETTELA_B: FALLBACK_LINK_ETTELA_B,
@@ -109,15 +109,10 @@ def send_request(method, data=None):
         return {"ok": False, "error": str(e)}
 
 def is_admin(chat_id, user_id):
-    # ۱. چک کردن اینکه طرف توی لیست ادمین‌های رباته
-    if str(user_id) in BOT_ADMINS:
-        return True
-    # ۲. اگه نبود، چک کن ببین ادمین گپه
+    if str(user_id) in BOT_ADMINS: return True
     res = send_request("getChatMember", {"chat_id": chat_id, "user_id": user_id})
-    if res.get("ok"):
-        status = res["result"].get("status")
-        if status in ["creator", "administrator"]:
-            return True
+    if res.get("ok") and res["result"].get("status") in ["creator", "administrator"]:
+        return True
     return False
 
 def get_link(chat_id):
@@ -194,8 +189,8 @@ print("\n🤖 ربات روشن شد...")
 
 while True:
     try:
-        # ⚡️ تایم‌اوت رو کردم ۳ ثانیه (تا جای ممکن برای سرور رایگان)
-        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 3})
+        # ⚡️ تایم‌اوت رو کردم ۱ ثانیه (حداکثر سرعت ممکن روی سرور رایگان)
+        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 1})
         
         if updates.get("ok") and updates.get("result"):
             for update in updates["result"]:
@@ -229,14 +224,20 @@ while True:
                         # دستور باطل کردن لینک‌ها (فقط برای ادمین‌ها)
                         if text in ['/del_links', 'باطل کردن لینک‌ها'] and chat_id == CHAT_ID_SAMBAH_B:
                             if not is_admin(chat_id, user_id):
-                                continue # اگه ادمین نبود، هیچی نمیگه
+                                continue
                             
                             send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌های قبلی و ساخت لینک‌های جدید..."})
                             
-                            report = "🔗 **لینک‌های جدید گپ‌ها:**\n\n"
+                            report = "🔗 **گزارش لینک‌ها:**\n\n"
                             
                             for c_id, c_name in CHATS_INFO.items():
-                                send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
+                                # ۱. باطل کردن قبلی
+                                revoke_res = send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
+                                if not revoke_res.get("ok"):
+                                    report += f"❌ **{c_name}** (ربات ادمین نیست یا دسترسی ندارد)\n"
+                                    continue
+
+                                # ۲. ساخت جدید
                                 res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
                                 
                                 if res_new.get("ok"):
@@ -244,10 +245,12 @@ while True:
                                     current_links[c_id] = new_link 
                                     report += f"✅ **{c_name}**\n{new_link}\n\n"
                                 else:
-                                    report += f"❌ **{c_name}** (خطا در ساخت لینک - ربات ادمین نیست؟)\n\n"
+                                    report += f"❌ **{c_name}** (خطا در ساخت لینک جدید)\n"
                             
+                            # ارسال گزارش به پیوی ادمین
                             send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
-                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌های قبلی باطل شدند و لینک‌های جدید به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
+                            # پیام تایید توی گپ
+                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌ها باطل شدند. گزارش (و لینک‌های جدید) به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
 
                     if "new_chat_members" in msg and chat_id == CHAT_ID_SAMBAH_B:
                         for member in msg["new_chat_members"]:
