@@ -37,6 +37,9 @@ CHATS_INFO = {
 
 ALLOWED_CHATS = list(CHATS_INFO.keys())
 
+# لیست ادمین‌های ربات
+BOT_ADMINS = ['724704269', '566594483', '2065233217']
+
 FALLBACK_LINK_SAMBAH_B = "https://ble.ir/join/4F2HQJ3rpD"
 FALLBACK_LINK_ETTELA_B = "https://ble.ir/join/4zejnKnWu5"
 FALLBACK_LINK_SAMBAH_A = "https://ble.ir/join/83tUiWjnM7"
@@ -106,6 +109,10 @@ def send_request(method, data=None):
         return {"ok": False, "error": str(e)}
 
 def is_admin(chat_id, user_id):
+    # ۱. چک کردن اینکه طرف توی لیست ادمین‌های رباته
+    if str(user_id) in BOT_ADMINS:
+        return True
+    # ۲. اگه نبود، چک کن ببین ادمین گپه
     res = send_request("getChatMember", {"chat_id": chat_id, "user_id": user_id})
     if res.get("ok"):
         status = res["result"].get("status")
@@ -174,7 +181,6 @@ saved_video_id = None
 if os.path.exists(VIDEO_CACHE_FILE):
     with open(VIDEO_CACHE_FILE, 'r') as f:
         saved_video_id = f.read().strip()
-    print("✅ فیلم از قبل ذخیره شده است.")
 
 print("⏳ در حال پاکسازی...")
 updates = send_request("getUpdates", {"offset": -1})
@@ -188,7 +194,9 @@ print("\n🤖 ربات روشن شد...")
 
 while True:
     try:
-        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 2}) # ⚡️ سرعت بالا رفت (۱۰ ثانیه)
+        # ⚡️ تایم‌اوت رو کردم ۳ ثانیه (تا جای ممکن برای سرور رایگان)
+        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 3})
+        
         if updates.get("ok") and updates.get("result"):
             for update in updates["result"]:
                 last_update_id = update["update_id"]
@@ -196,9 +204,7 @@ while True:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
                     
-                    # 🚨 سیستم امنیتی: خروج از گپ غیرمجاز
                     if chat_id not in ALLOWED_CHATS:
-                        print(f"⚠️ ربات به یک گپ غیرمجاز اضافه شد ({chat_id}). در حال خروج...")
                         send_request("leaveChat", {"chat_id": chat_id})
                         continue
                     
@@ -206,56 +212,49 @@ while True:
                         with open(VIDEO_CACHE_FILE, 'w') as f:
                             f.write(msg["video"]["file_id"])
                         saved_video_id = msg["video"]["file_id"]
-                        print(f"\n✅ فیلم جدید ذخیره شد!")
                         
                     if "text" in msg:
                         text = msg["text"].strip()
                         user_id = str(msg["from"]["id"]) 
                         
-                        # 🔐 بررسی ادمین بودن برای دستورات (فقط توی گپ سمباح B)
-                        if text in ['لینک', 'لینک ها', '/del_links', 'باطل کردن لینک‌ها'] and chat_id == CHAT_ID_SAMBAH_B:
-                            # اگه کاربر ادمین نبود، بیخیال شو
-                            if not is_admin(chat_id, user_id):
-                                continue 
+                        # دستور لینک (برای همه آزاده)
+                        if text in ['لینک', 'لینک ها'] and chat_id == CHAT_ID_SAMBAH_B:
+                            send_request("sendMessage", {
+                                "chat_id": chat_id,
+                                "text": "🔗 **لیست لینک‌های گپ‌های سمباح:**",
+                                "parse_mode": "Markdown",
+                                "reply_markup": get_links_keyboard()
+                            })
                             
-                            if text in ['لینک', 'لینک ها']:
-                                send_request("sendMessage", {
-                                    "chat_id": chat_id,
-                                    "text": "🔗 **لیست لینک‌های گپ‌های سمباح:**",
-                                    "parse_mode": "Markdown",
-                                    "reply_markup": get_links_keyboard()
-                                })
-                                print("✅ منوی لینک‌ها ارسال شد.")
+                        # دستور باطل کردن لینک‌ها (فقط برای ادمین‌ها)
+                        if text in ['/del_links', 'باطل کردن لینک‌ها'] and chat_id == CHAT_ID_SAMBAH_B:
+                            if not is_admin(chat_id, user_id):
+                                continue # اگه ادمین نبود، هیچی نمیگه
+                            
+                            send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌های قبلی و ساخت لینک‌های جدید..."})
+                            
+                            report = "🔗 **لینک‌های جدید گپ‌ها:**\n\n"
+                            
+                            for c_id, c_name in CHATS_INFO.items():
+                                send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
+                                res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
                                 
-                            elif text in ['/del_links', 'باطل کردن لینک‌ها']:
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌های قبلی و ساخت لینک‌های جدید..."})
-                                
-                                report = "🔗 **لینک‌های جدید گپ‌ها:**\n\n"
-                                
-                                for c_id, c_name in CHATS_INFO.items():
-                                    res_revoke = send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
-                                    res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
-                                    
-                                    if res_new.get("ok"):
-                                        new_link = res_new["result"]
-                                        current_links[c_id] = new_link 
-                                        report += f"✅ **{c_name}**\n{new_link}\n\n"
-                                    else:
-                                        report += f"❌ **{c_name}** (خطا در ساخت لینک - ربات ادمین نیست؟)\n\n"
-                                
-                                send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌های قبلی باطل شدند و لینک‌های جدید به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
-                                print("✅ لینک‌ها باطل و جدید ساخته شدند.")
+                                if res_new.get("ok"):
+                                    new_link = res_new["result"]
+                                    current_links[c_id] = new_link 
+                                    report += f"✅ **{c_name}**\n{new_link}\n\n"
+                                else:
+                                    report += f"❌ **{c_name}** (خطا در ساخت لینک - ربات ادمین نیست؟)\n\n"
+                            
+                            send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
+                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌های قبلی باطل شدند و لینک‌های جدید به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
 
                     if "new_chat_members" in msg and chat_id == CHAT_ID_SAMBAH_B:
                         for member in msg["new_chat_members"]:
                             if member.get("is_bot"): continue
                             user_name = member.get("first_name", "دوست عزیز")
-                            print(f"\n👋 کاربر جدید: {user_name}")
                             if saved_video_id:
-                                print("⏳ ارسال خوش‌آمدگویی...")
-                                result = send_video_to_target(saved_video_id, user_name)
-                                print("🚀 ارسال شد!" if result.get("ok") else f"❌ خطا: {result}")
+                                send_video_to_target(saved_video_id, user_name)
 
     except KeyboardInterrupt:
         break
