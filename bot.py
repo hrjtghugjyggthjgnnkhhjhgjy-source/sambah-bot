@@ -188,7 +188,7 @@ print("\n🤖 ربات روشن شد...")
 
 while True:
     try:
-        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 10}) # ⚡️ سرعت بالا رفت (۱۰ ثانیه)
+        updates = send_request("getUpdates", {"offset": last_update_id + 1, "timeout": 7}) # ⚡️ سرعت بالا رفت (۱۰ ثانیه)
         if updates.get("ok") and updates.get("result"):
             for update in updates["result"]:
                 last_update_id = update["update_id"]
