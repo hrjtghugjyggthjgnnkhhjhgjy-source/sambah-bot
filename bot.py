@@ -3,6 +3,7 @@ import json
 import uuid
 import time
 import os
+from datetime import datetime, timezone, timedelta
 
 # 🔐 خواندن توکن از محیط سرور
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
@@ -66,6 +67,22 @@ current_links = {
 VIDEO_CACHE_FILE = 'welcome_video.txt'
 USERS_DB_FILE = 'users.txt'
 
+# متن خوش‌آمدگویی پیوی برای کاربران عادی
+PV_WELCOME_TEXT = """درود ✨
+کلن بزرگ 𓄂SAMBAH𓆃 عضو گیری میکند 
+«*سمباح:سازمان مبارزه با بی اخلاقی و بی حیایی* »
+مهم نیست امروز شروع کرده باشی در هر سطحی هر لولی حتی تازه کارترین هارو قوی میکنیم 🚀
+
+💸آموزش برداشت خودکار معدن
+💹قوی کردن اکانت 
+🔮رسیدن به کریستال 
+✨برای عضویت و سوالات درباره کلن به آیدی های زیر مراجعه کنید:
+
+@StarWarFrg_RoBot (ربات بازی)
+@SAMBAHY (آیدی جهت عضویت در کلن)
+@mmdrza168 (آیدی جهت عضویت در کلن)"""
+
+# متن قوانین برای فیلم خوش‌آمدگویی
 caption_template = """درود {name} ✨
 اگه تو واحد B هستی حتما یکی از سلاطینی🙌
 
@@ -93,11 +110,21 @@ caption_template = """درود {name} ✨
 *10_* هیچکس حق دادن هیچ‌گونه اطلاعاتی از کلن نداره بخصوص لینک دادن و هیچ عضوی بدون اجازه نمیارید هرکس مدنظر بود به ادمینا اطلاع بدید
 
 اگه خوندید و قبول دارید بنویسید قبول دارم ✅
-خوش بگذرونید🚀
-
-👇 **برای دریافت لینک گپ‌ها، دستور `لینک ها` را ارسال کنید.**"""
+خوش بگذرونید🚀"""
 
 admin_states = {}
+
+# تابع چک کردن ساعت (به وقت ایران)
+def is_link_time_blocked():
+    # ساعت ایران (UTC+3:30)
+    iran_tz = timezone(timedelta(hours=3, minutes=30))
+    now = datetime.now(iran_tz)
+    hour = now.hour
+    
+    # از ساعت ۲۳ شب (۱۱) تا ۱۱ صبح (۱۱)
+    if hour >= 23 or hour < 11:
+        return True
+    return False
 
 def send_request(method, data=None):
     url = f"https://tapi.bale.ai/bot{BOT_TOKEN}/{method}"
@@ -139,6 +166,10 @@ def get_link(chat_id):
     return current_links.get(chat_id, "https://ble.ir/")
 
 def get_welcome_keyboard():
+    # اگه ساعت ممنوعه باشه، کیبورد خالی برمی‌گردونه (یعنی دکمه‌ای نمیاد)
+    if is_link_time_blocked():
+        return json.dumps({"inline_keyboard": []})
+        
     return json.dumps({
         "inline_keyboard": [
             [{"text": '💬 گپ سمباح (B)', "url": get_link(CHAT_ID_SAMBAH_B)}],
@@ -219,11 +250,15 @@ while True:
                     if not msg.get("from", {}).get("is_bot"):
                         save_user(user_id)
                     
-                    # --- منطق پیوی (فقط ادمین‌ها) ---
+                    # --- منطق پیوی (ادمین و کاربر عادی) ---
                     if chat_id == user_id:
+                        # اگه کاربر عادی بود، پیام خوش‌آمد پیوی رو بفرست
                         if user_id not in BOT_ADMINS:
+                            if "text" in msg and msg["text"].strip() == '/start':
+                                send_request("sendMessage", {"chat_id": chat_id, "text": PV_WELCOME_TEXT})
                             continue 
                         
+                        # اگه ادمین بود
                         if "text" in msg and msg["text"].strip() in ['/start', 'پنل', '/panel']:
                             kb = json.dumps({
                                 "inline_keyboard": [
@@ -238,25 +273,22 @@ while True:
                     if user_id in admin_states:
                         state = admin_states[user_id]
                         
-                        # ذخیره فیلم جدید خوش‌آمدگویی
                         if state['step'] == 'waiting_for_video':
                             if "video" in msg:
                                 with open(VIDEO_CACHE_FILE, 'w') as f:
                                     f.write(msg["video"]["file_id"])
                                 saved_video_id = msg["video"]["file_id"]
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **فیلم خوش‌آمدگویی جدید با موفقیت ذخیره شد و جایگزین فیلم قبلی شد.**"})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **فیلم خوش‌آمدگویی جدید ذخیره شد.**"})
                             else:
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "❌ لطفاً فقط یک **فیلم** (ویدیو) بفرستید."})
                             del admin_states[user_id]
                             continue
 
-                        # جلوگیری از ارسال فیلم و عکس در پیام سراسری
                         if "photo" in msg or "video" in msg:
                             if state['step'] in ['get_text', 'get_broadcast_text']:
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "❌ **خطا:** برای ارسال سراسری فقط می‌توانید متن بفرستید."})
                                 continue
                         
-                        # پیام سراسری به پیوی
                         if state['step'] == 'get_text' and state['target'] == 'pv' and 'text' in msg:
                             if os.path.exists(USERS_DB_FILE):
                                 with open(USERS_DB_FILE, 'r') as f:
@@ -271,7 +303,6 @@ while True:
                             del admin_states[user_id]
                             continue
                             
-                        # پیام سراسری به گپ(ها)
                         if state['step'] == 'get_broadcast_text' and 'text' in msg:
                             target_cid = state['target']
                             if target_cid == 'all_groups':
@@ -290,32 +321,33 @@ while True:
                     if "text" in msg:
                         text = msg["text"].strip()
                         
+                        # دستور لینک‌ها با چک کردن ساعت
                         if text in ['لینک', 'لینک ها'] and chat_id == CHAT_ID_SAMBAH_B:
-                            send_request("sendMessage", {
-                                "chat_id": chat_id,
-                                "text": "🔗 **لیست لینک‌های گپ‌های سمباح:**",
-                                "parse_mode": "Markdown",
-                                "reply_markup": get_links_keyboard()
-                            })
+                            if is_link_time_blocked():
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "⏰ دریافت لینک از ساعت ۲۳ الی ۱۱ ممنوع است."})
+                            else:
+                                send_request("sendMessage", {
+                                    "chat_id": chat_id,
+                                    "text": "🔗 **لیست لینک‌های گپ‌های سمباح:**",
+                                    "parse_mode": "Markdown",
+                                    "reply_markup": get_links_keyboard()
+                                })
                             
-                        # 🚨 دستور باطل کردن (حساسیت کم نسبت به فاصله)
+                        # دستور باطل کردن لینک‌ها
                         if 'باطل کردن لینک' in text and chat_id == CHAT_ID_SAMBAH_B:
                             if not is_admin(chat_id, user_id): continue
                             
                             send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌ها..."})
-                            
                             report = "🔗 **گزارش لینک‌ها:**\n\n"
                             for c_id, c_name in CHATS_INFO.items():
                                 send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
                                 res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
-                                
                                 if res_new.get("ok"):
                                     new_link = res_new["result"]
                                     current_links[c_id] = new_link 
                                     report += f"✅ **{c_name}**\n{new_link}\n\n"
                                 else:
                                     report += f"❌ **{c_name}**\nدلیل: {res_new.get('description', 'ربات ادمین نیست')}\n\n"
-                                    
                             send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
                             send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌ها باطل شدند. گزارش به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
 
@@ -368,6 +400,7 @@ while True:
 
                     continue
 
+                # --- خوش‌آمدگویی ---
                 if "message" in update and "new_chat_members" in update["message"]:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
