@@ -36,7 +36,7 @@ CHATS_INFO = {
 }
 
 ALLOWED_CHATS = list(CHATS_INFO.keys())
-BOT_ADMINS = ['724704269', '566594483', '2065233217'] # ادمین‌های ربات
+BOT_ADMINS = ['724704269', '566594483', '2065233217']
 
 # لینک‌های پشتیبان
 FALLBACK_LINK_SAMBAH_B = "https://ble.ir/join/4F2HQJ3rpD"
@@ -64,7 +64,7 @@ current_links = {
 }
 
 VIDEO_CACHE_FILE = 'welcome_video.txt'
-USERS_DB_FILE = 'users.txt' # دیتابیس ساده برای ذخیره آیدی کاربرا
+USERS_DB_FILE = 'users.txt'
 
 caption_template = """درود {name} ✨
 اگه تو واحد B هستی حتما یکی از سلاطینی🙌
@@ -97,7 +97,6 @@ caption_template = """درود {name} ✨
 
 👇 **برای دریافت لینک گپ‌ها، دستور `لینک ها` را ارسال کنید.**"""
 
-# وضعیت موقت ادمین‌ها برای پنل
 admin_states = {}
 
 def send_request(method, data=None):
@@ -120,7 +119,6 @@ def is_admin(chat_id, user_id):
         return True
     return False
 
-# تابع ذخیره کاربر جدید در دیتابیس
 def save_user(user_id):
     user_id = str(user_id)
     if os.path.exists(USERS_DB_FILE):
@@ -213,46 +211,53 @@ while True:
             for update in updates["result"]:
                 last_update_id = update["update_id"]
                 
-                # --- پردازش پیام‌ها ---
                 if "message" in update:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
                     user_id = str(msg["from"]["id"])
                     
-                    # ذخیره کردن کاربر در دیتابیس (فقط اگه ربات رو استارت کرده یا توی گپ پیام داده)
                     if not msg.get("from", {}).get("is_bot"):
                         save_user(user_id)
                     
-                    # *** منطق پیوی: ربات فقط به ادمین‌ها جواب میده ***
-                    if chat_id == user_id: # یعنی توی پیوی هستیم
+                    # --- منطق پیوی (فقط ادمین‌ها) ---
+                    if chat_id == user_id:
                         if user_id not in BOT_ADMINS:
-                            continue # کاربر عادی جواب نمی‌گیره
+                            continue 
                         
-                        # اگه ادمین بود و /start یا پنل زد:
                         if "text" in msg and msg["text"].strip() in ['/start', 'پنل', '/panel']:
                             kb = json.dumps({
                                 "inline_keyboard": [
-                                    [{"text": "📢 ارسال پیام سراسری", "callback_data": "admin_broadcast"}]
+                                    [{"text": "📢 ارسال پیام سراسری", "callback_data": "admin_broadcast"}],
+                                    [{"text": "🎬 تغییر فیلم خوش‌آمدگویی", "callback_data": "change_video"}]
                                 ]
                             }, ensure_ascii=False)
                             send_request("sendMessage", {"chat_id": chat_id, "text": "👑 **پنل مدیریت**\nخوش آمدید ادمین عزیز.", "reply_markup": kb, "parse_mode": "Markdown"})
                             continue
 
-                    # ذخیره فیلم خوش‌آمدگویی (توی پیوی ادمین)
-                    if "video" in msg and not msg.get("from", {}).get("is_bot"):
-                        with open(VIDEO_CACHE_FILE, 'w') as f:
-                            f.write(msg["video"]["file_id"])
-                        saved_video_id = msg["video"]["file_id"]
-                        print(f"\n✅ فیلم خوش‌آمدگویی ذخیره شد!")
-                        send_request("sendMessage", {"chat_id": chat_id, "text": "✅ فیلم خوش‌آمدگویی برای همیشه ذخیره شد."})
-                        continue
-
                     # بررسی وضعیت پنل ادمین
                     if user_id in admin_states:
                         state = admin_states[user_id]
                         
+                        # ذخیره فیلم جدید خوش‌آمدگویی
+                        if state['step'] == 'waiting_for_video':
+                            if "video" in msg:
+                                with open(VIDEO_CACHE_FILE, 'w') as f:
+                                    f.write(msg["video"]["file_id"])
+                                saved_video_id = msg["video"]["file_id"]
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **فیلم خوش‌آمدگویی جدید با موفقیت ذخیره شد و جایگزین فیلم قبلی شد.**"})
+                            else:
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "❌ لطفاً فقط یک **فیلم** (ویدیو) بفرستید."})
+                            del admin_states[user_id]
+                            continue
+
+                        # جلوگیری از ارسال فیلم و عکس در پیام سراسری
+                        if "photo" in msg or "video" in msg:
+                            if state['step'] in ['get_text', 'get_broadcast_text']:
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "❌ **خطا:** برای ارسال سراسری فقط می‌توانید متن بفرستید."})
+                                continue
+                        
+                        # پیام سراسری به پیوی
                         if state['step'] == 'get_text' and state['target'] == 'pv' and 'text' in msg:
-                            # ارسال به تمام کاربران دیتابیس
                             if os.path.exists(USERS_DB_FILE):
                                 with open(USERS_DB_FILE, 'r') as f:
                                     all_users = f.read().splitlines()
@@ -266,36 +271,22 @@ while True:
                             del admin_states[user_id]
                             continue
                             
+                        # پیام سراسری به گپ(ها)
                         if state['step'] == 'get_broadcast_text' and 'text' in msg:
                             target_cid = state['target']
-                            send_request("sendMessage", {"chat_id": target_cid, "text": msg['text']})
-                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ پیام سراسری به گپ ارسال شد."})
+                            if target_cid == 'all_groups':
+                                success = 0
+                                for cid in CHATS_INFO.keys():
+                                    res = send_request("sendMessage", {"chat_id": cid, "text": msg['text']})
+                                    if res.get("ok"): success += 1
+                                send_request("sendMessage", {"chat_id": chat_id, "text": f"✅ پیام به {success} گپ ارسال شد."})
+                            else:
+                                send_request("sendMessage", {"chat_id": target_cid, "text": msg['text']})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ پیام سراسری به گپ ارسال شد."})
                             del admin_states[user_id]
                             continue
 
-                        if state['step'] == 'get_broadcast_text' and 'video' in msg:
-                            target_cid = state['target']
-                            url = f"https://tapi.bale.ai/bot{BOT_TOKEN}/sendVideo"
-                            boundary = uuid.uuid4().hex
-                            body = b''
-                            fields = {'chat_id': target_cid, 'video': msg["video"]["file_id"]}
-                            for key, value in fields.items():
-                                body += f'--{boundary}\r\n'.encode('utf-8')
-                                body += f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode('utf-8')
-                                body += f'{value}\r\n'.encode('utf-8')
-                            body += f'--{boundary}--\r\n'.encode('utf-8')
-                            req = urllib.request.Request(url, data=body)
-                            req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
-                            try:
-                                with urllib.request.urlopen(req) as response:
-                                    pass
-                            except:
-                                pass
-                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ فیلم به گپ ارسال شد."})
-                            del admin_states[user_id]
-                            continue
-
-                    # --- پردازش دستورات متنی توی گپ‌ها ---
+                    # --- دستورات توی گپ ---
                     if "text" in msg:
                         text = msg["text"].strip()
                         
@@ -307,26 +298,28 @@ while True:
                                 "reply_markup": get_links_keyboard()
                             })
                             
-                        if text in ['/del_links', 'باطل کردن لینک‌ها'] and chat_id == CHAT_ID_SAMBAH_B:
+                        # 🚨 دستور باطل کردن (حساسیت کم نسبت به فاصله)
+                        if 'باطل کردن لینک' in text and chat_id == CHAT_ID_SAMBAH_B:
                             if not is_admin(chat_id, user_id): continue
+                            
                             send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌ها..."})
+                            
                             report = "🔗 **گزارش لینک‌ها:**\n\n"
                             for c_id, c_name in CHATS_INFO.items():
-                                revoke_res = send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
-                                if not revoke_res.get("ok"):
-                                    report += f"❌ **{c_name}**\nدلیل: {revoke_res.get('description', 'خطا')}\n\n"
-                                    continue
+                                send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
                                 res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
+                                
                                 if res_new.get("ok"):
                                     new_link = res_new["result"]
                                     current_links[c_id] = new_link 
                                     report += f"✅ **{c_name}**\n{new_link}\n\n"
                                 else:
-                                    report += f"❌ **{c_name}** (خطا در ساخت لینک)\n\n"
+                                    report += f"❌ **{c_name}**\nدلیل: {res_new.get('description', 'ربات ادمین نیست')}\n\n"
+                                    
                             send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
                             send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌ها باطل شدند. گزارش به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
 
-                # --- پردازش دکمه‌های شیشه‌ای (Callback Query) ---
+                # --- پردازش دکمه‌های شیشه‌ای ---
                 if "callback_query" in update:
                     cq = update["callback_query"]
                     cq_id = cq["id"]
@@ -336,21 +329,30 @@ while True:
                     
                     send_request("answerCallbackQuery", {"callback_query_id": cq_id})
 
-                    if user_id not in BOT_ADMINS: continue # فقط ادمین‌ها
+                    if user_id not in BOT_ADMINS: continue
 
                     if data == "admin_broadcast":
                         admin_states[user_id] = {'step': 'choose_target'}
                         kb = json.dumps({
                             "inline_keyboard": [
                                 [{"text": "ارسال به پیوی همه", "callback_data": "target_pv"}],
-                                [{"text": "ارسال به یک گپ", "callback_data": "target_group"}]
+                                [{"text": "ارسال به یک گپ", "callback_data": "target_group"}],
+                                [{"text": "ارسال به همه گپ‌ها", "callback_data": "target_all"}]
                             ]
                         }, ensure_ascii=False)
                         send_request("sendMessage", {"chat_id": user_id, "text": "🎯 کجا می‌خوای پیام سراسری بفرستی؟", "reply_markup": kb})
 
+                    if data == "change_video":
+                        admin_states[user_id] = {'step': 'waiting_for_video'}
+                        send_request("sendMessage", {"chat_id": user_id, "text": "🎬 **لطفاً فیلم جدید خوش‌آمدگویی را بفرستید:**"})
+
                     if data == "target_pv":
                         admin_states[user_id] = {'step': 'get_text', 'target': 'pv'}
-                        send_request("sendMessage", {"chat_id": user_id, "text": "📝 متن پیام سراسری رو بفرست تا به همه کاربران ربات بفرستم:"})
+                        send_request("sendMessage", {"chat_id": user_id, "text": "📝 متن پیام سراسری رو بفرست (فقط متن):"})
+
+                    if data == "target_all":
+                        admin_states[user_id] = {'step': 'get_broadcast_text', 'target': 'all_groups'}
+                        send_request("sendMessage", {"chat_id": user_id, "text": "📝 متن پیام رو بفرست تا به **همه گپ‌ها** ارسال بشه (فقط متن):"})
 
                     if data == "target_group":
                         admin_states[user_id] = {'step': 'choose_group'}
@@ -362,11 +364,10 @@ while True:
                     if data.startswith("broadcast_"):
                         target_cid = data.split("_")[1]
                         admin_states[user_id] = {'step': 'get_broadcast_text', 'target': target_cid}
-                        send_request("sendMessage", {"chat_id": user_id, "text": f"📝 متن یا فیلم رو بفرست تا به گپ {CHATS_INFO.get(target_cid, target_cid)} ارسال بشه:"})
+                        send_request("sendMessage", {"chat_id": user_id, "text": f"📝 متن پیام رو بفرست تا به گپ {CHATS_INFO.get(target_cid, target_cid)} ارسال بشه (فقط متن):"})
 
                     continue
 
-                # --- خوش‌آمدگویی ---
                 if "message" in update and "new_chat_members" in update["message"]:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
@@ -377,7 +378,7 @@ while True:
                             if saved_video_id:
                                 send_video_to_target(saved_video_id, user_name)
 
-        time.sleep(0.2) # سرعت بالا
+        time.sleep(0.2)
 
     except KeyboardInterrupt:
         break
