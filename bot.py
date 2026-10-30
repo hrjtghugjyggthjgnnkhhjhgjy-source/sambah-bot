@@ -23,17 +23,18 @@ CHAT_ID_AMIRALI = '4853834278'
 CHAT_ID_MAJID = '5422739931'
 CHAT_ID_TITAP = '5562715565'
 
+# 🎨 اسم‌های جدید (طبق فونت‌های ارسالی شما)
 CHATS_INFO = {
-    CHAT_ID_SAMBAH_B: "گپ سمباح (B)",
-    CHAT_ID_ETTELA_B: "اطلاع رسانی سمباح (B)",
-    CHAT_ID_SAMBAH_A: "گپ سمباح (A)",
-    CHAT_ID_ETTELA_A: "اطلاع رسانی سمباح (A)",
-    CHAT_ID_HAMALAT: "حملات سمباح",
-    CHAT_ID_DOORHAMI: "دورهمی سمباح",
-    CHAT_ID_VORUDI: "ورودی سمباح",
-    CHAT_ID_AMIRALI: "پیام امیرعلی",
-    CHAT_ID_MAJID: "پیام مجید",
-    CHAT_ID_TITAP: "پیام تیتاپی ها"
+    CHAT_ID_SAMBAH_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)",
+    CHAT_ID_ETTELA_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐁)",
+    CHAT_ID_SAMBAH_A: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐀)",
+    CHAT_ID_ETTELA_A: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐀)",
+    CHAT_ID_HAMALAT: "⚔️𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬⚔️",
+    CHAT_ID_DOORHAMI: "🎊𝗦𝗮𝗺𝗯𝗮𝗵 𝗚𝗮𝗺𝗲𝘀🎊",
+    CHAT_ID_VORUDI: "🚷𝗦𝗮𝗺𝗯𝗮 𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆🚷",
+    CHAT_ID_AMIRALI: "𝐀𝐦𝐢𝐫𝐀𝐥𝐢 𝐂𝐡𝐚𝐭",
+    CHAT_ID_MAJID: "𝐌𝐚𝐣𝐢𝐝 𝐂𝐡𝐚𝐭",
+    CHAT_ID_TITAP: "𝐓𝐢𝐭𝐚𝐩 𝐂𝐡𝐚𝐭"
 }
 
 ALLOWED_CHATS = list(CHATS_INFO.keys())
@@ -108,11 +109,13 @@ caption_template = """درود {name} ✨
 
 admin_states = {}
 
+# ⏰ تابع بررسی زمان (تغییر به ساعت 10 صبح)
 def is_link_time_blocked():
     iran_tz = timezone(timedelta(hours=3, minutes=30))
     now = datetime.now(iran_tz)
     hour = now.hour
-    if hour >= 23 or hour < 11:
+    # از ساعت ۲۳ شب تا ۱۰ صبح ممنوعه
+    if hour >= 23 or hour < 10:
         return True
     return False
 
@@ -159,28 +162,30 @@ def get_welcome_keyboard():
     if is_link_time_blocked():
         return json.dumps({"inline_keyboard": []})
         
+    # کیبورد خوش‌آمدگویی با اسم‌های جدید
     return json.dumps({
         "inline_keyboard": [
-            [{"text": '💬 گپ سمباح (B)', "url": get_link(CHAT_ID_SAMBAH_B)}],
-            [{"text": '🔔 اطلاع رسانی سمباح (B)', "url": get_link(CHAT_ID_ETTELA_B)}],
-            [{"text": '🚀 حملات سمباح', "url": get_link(CHAT_ID_HAMALAT)}],
-            [{"text": '🎊 دورهمی سمباح', "url": get_link(CHAT_ID_DOORHAMI)}]
+            [{"text": '💬 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)', "url": get_link(CHAT_ID_SAMBAH_B)}],
+            [{"text": '🔔 𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬 (𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
+            [{"text": '⚔️ 𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬', "url": get_link(CHAT_ID_HAMALAT)}],
+            [{"text": '🎊 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐚𝐦𝐞𝐬', "url": get_link(CHAT_ID_DOORHAMI)}]
         ]
     }, ensure_ascii=False)
 
 def get_links_keyboard():
+    # منوی ۱۰ دکمه‌ای لاکچری
     return json.dumps({
         "inline_keyboard": [
-            [{"text": '💬 گپ سمباح (B)', "url": get_link(CHAT_ID_SAMBAH_B)}],
-            [{"text": '🔔 اطلاع رسانی سمباح (B)', "url": get_link(CHAT_ID_ETTELA_B)}],
-            [{"text": '💬 گپ سمباح (A)', "url": get_link(CHAT_ID_SAMBAH_A)}],
-            [{"text": '🔔 اطلاع رسانی سمباح (A)', "url": get_link(CHAT_ID_ETTELA_A)}],
-            [{"text": '🚀 حملات سمباح', "url": get_link(CHAT_ID_HAMALAT)}],
-            [{"text": '🎊 دورهمی سمباح', "url": get_link(CHAT_ID_DOORHAMI)}],
-            [{"text": '🚷 ورودی سمباح', "url": get_link(CHAT_ID_VORUDI)}],
-            [{"text": '🌚 پیام امیرعلی', "url": get_link(CHAT_ID_AMIRALI)}],
-            [{"text": '🌚 پیام مجید', "url": get_link(CHAT_ID_MAJID)}],
-            [{"text": '🌚 پیام تیتاپی ها', "url": get_link(CHAT_ID_TITAP)}]
+            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)', "url": get_link(CHAT_ID_SAMBAH_B)}],
+            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
+            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐀)', "url": get_link(CHAT_ID_SAMBAH_A)}],
+            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐀)', "url": get_link(CHAT_ID_ETTELA_A)}],
+            [{"text": '⚔️𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬⚔️', "url": get_link(CHAT_ID_HAMALAT)}],
+            [{"text": '🎊𝗦𝗮𝗺𝗯𝗮𝗵 𝗚𝗮𝗺𝗲𝘀🎊', "url": get_link(CHAT_ID_DOORHAMI)}],
+            [{"text": '🚷𝗦𝗮𝗺𝗯𝗮 𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆🚷', "url": get_link(CHAT_ID_VORUDI)}],
+            [{"text": '𝐀𝐦𝐢𝐫𝐀𝐥𝐢 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_AMIRALI)}],
+            [{"text": '𝐌𝐚𝐣𝐢𝐝 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_MAJID)}],
+            [{"text": '𝐓𝐢𝐭𝐚𝐩 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_TITAP)}]
         ]
     }, ensure_ascii=False)
 
@@ -188,8 +193,8 @@ def get_pv_keyboard():
     return json.dumps({
         "inline_keyboard": [
             [{"text": '🎮 ربات بازی (StarWar)', "url": "https://ble.ir/StarWarFrg_RoBot"}],
-            [{"text": 'جهت عضویت در کلن', "url": "https://ble.ir/SAMBAHY"}],
-            [{"text": 'جهت عضویت در کلن', "url": "https://ble.ir/mmdrza168"}]
+            [{"text": '➕ عضویت در کلن (۱)', "url": "https://ble.ir/SAMBAHY"}],
+            [{"text": '➕ عضویت در کلن (۲)', "url": "https://ble.ir/mmdrza168"}]
         ]
     }, ensure_ascii=False)
 
@@ -320,7 +325,7 @@ while True:
                         
                         if text in ['لینک', 'لینک ها'] and chat_id == CHAT_ID_SAMBAH_B:
                             if is_link_time_blocked():
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "⏰ دریافت لینک از ساعت ۲۳ الی ۱۱ ممنوع است."})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "⏰ دریافت لینک از ساعت ۲۳ الی ۱۰ ممنوع است."})
                             else:
                                 send_request("sendMessage", {
                                     "chat_id": chat_id,
