@@ -70,6 +70,9 @@ current_links = {
 VIDEO_CACHE_FILE = 'welcome_video.txt'
 USERS_DB_FILE = 'users.txt'
 
+# 🚦 متغیر وضعیت قفل لینک‌ها (در حافظه)
+LINKS_LOCKED = False
+
 PV_WELCOME_TEXT = """درود ✨
 کلن بزرگ 𓄂SAMBAH𓆃 عضو گیری میکند 
 «*سمباح:سازمان مبارزه با بی اخلاقی و بی حیایی* »
@@ -160,7 +163,7 @@ def get_link(chat_id):
     return current_links.get(chat_id, "https://ble.ir/")
 
 def get_welcome_keyboard():
-    if is_link_time_blocked():
+    if LINKS_LOCKED or is_link_time_blocked():
         return json.dumps({"inline_keyboard": []})
     return json.dumps({
         "inline_keyboard": [
@@ -187,7 +190,6 @@ def get_links_keyboard():
         ]
     }, ensure_ascii=False)
 
-# ✨ تغییر دکمه‌های پیوی طبق خواسته شما
 def get_pv_keyboard():
     return json.dumps({
         "inline_keyboard": [
@@ -316,7 +318,9 @@ while True:
                             kb = json.dumps({
                                 "inline_keyboard": [
                                     [{"text": "📢 ارسال پیام سراسری", "callback_data": "admin_broadcast"}],
-                                    [{"text": "🎬 تغییر فیلم خوش‌آمدگویی", "callback_data": "change_video"}]
+                                    [{"text": "🎬 تغییر فیلم خوش‌آمدگویی", "callback_data": "change_video"}],
+                                    [{"text": "🔒 قفل کردن لینک‌ها", "callback_data": "lock_links"}],
+                                    [{"text": "🔓 باز کردن لینک‌ها", "callback_data": "unlock_links"}]
                                 ]
                             }, ensure_ascii=False)
                             send_request("sendMessage", {"chat_id": chat_id, "text": "👑 **پنل مدیریت**\nخوش آمدید ادمین عزیز.", "reply_markup": kb, "parse_mode": "Markdown"})
@@ -366,7 +370,9 @@ while True:
                     if "text" in msg:
                         text = msg["text"].strip()
                         if text in ['لینک', 'لینک ها'] and chat_id == CHAT_ID_SAMBAH_B:
-                            if is_link_time_blocked():
+                            if LINKS_LOCKED:
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "⛔️ **لینک‌ها توسط ادمین قفل شده‌اند.**"})
+                            elif is_link_time_blocked():
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "⏰ دریافت لینک از ساعت ۲۳ الی ۱۰ ممنوع است."})
                             else:
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "🔗 **لیست لینک‌ها:**", "parse_mode": "Markdown", "reply_markup": get_links_keyboard()})
@@ -398,64 +404,50 @@ while True:
                         if chat_id not in games:
                             send_request("answerCallbackQuery", {"callback_query_id": cq_id, "text": "بازی پیدا نشد!"})
                             continue
-                            
                         game = games[chat_id]
-                        
                         if not game['active']:
                             send_request("answerCallbackQuery", {"callback_query_id": cq_id, "text": "بازی تموم شده!"})
                             continue
-                            
                         current_turn_player = game['p1'] if game['turn'] == '❌' else game['p2']
                         if user_id != current_turn_player:
                             send_request("answerCallbackQuery", {"callback_query_id": cq_id, "text": "نوبت حریفته!"})
                             continue
-
                         idx = int(data.split("_")[1])
-                        
                         if game['board'][idx] != "":
                             send_request("answerCallbackQuery", {"callback_query_id": cq_id, "text": "این خونه پره!"})
                             continue
-                            
                         player_symbol = game['turn']
                         game['board'][idx] = player_symbol
-                        
                         if check_winner(game['board'], player_symbol):
                             game['active'] = False
                             winner_name = game['p1_name'] if player_symbol == '❌' else game['p2_name']
-                            send_request("editMessageText", {
-                                "chat_id": chat_id,
-                                "message_id": message_id,
-                                "text": f"🎉 **بازی تموم شد!**\n\nبرنده: {player_symbol} {winner_name}",
-                                "reply_markup": get_board_keyboard(game['board'])
-                            })
+                            send_request("editMessageText", {"chat_id": chat_id, "message_id": message_id, "text": f"🎉 **برنده:** {player_symbol} {winner_name}", "reply_markup": get_board_keyboard(game['board'])})
                             send_request("answerCallbackQuery", {"callback_query_id": cq_id})
                             continue
-                            
                         if "" not in game['board']:
                             game['active'] = False
-                            send_request("editMessageText", {
-                                "chat_id": chat_id,
-                                "message_id": message_id,
-                                "text": "🤝 **مساوی شد!**",
-                                "reply_markup": get_board_keyboard(game['board'])
-                            })
+                            send_request("editMessageText", {"chat_id": chat_id, "message_id": message_id, "text": "🤝 **مساوی!**", "reply_markup": get_board_keyboard(game['board'])})
                             send_request("answerCallbackQuery", {"callback_query_id": cq_id})
                             continue
-                            
                         game['turn'] = '⭕️' if player_symbol == '❌' else '❌'
                         next_player_name = game['p1_name'] if game['turn'] == '❌' else game['p2_name']
-                        
-                        send_request("editMessageText", {
-                            "chat_id": chat_id,
-                            "message_id": message_id,
-                            "text": f"🎮 **بازی دوز**\n\n❌ {game['p1_name']}\n⭕️ {game['p2_name']}\n\nنوبت: {game['turn']} {next_player_name}",
-                            "reply_markup": get_board_keyboard(game['board'])
-                        })
+                        send_request("editMessageText", {"chat_id": chat_id, "message_id": message_id, "text": f"🎮 **دوز**\nنوبت: {game['turn']} {next_player_name}", "reply_markup": get_board_keyboard(game['board'])})
                         send_request("answerCallbackQuery", {"callback_query_id": cq_id})
                         continue
 
                     send_request("answerCallbackQuery", {"callback_query_id": cq_id})
                     if user_id not in BOT_ADMINS: continue
+                    
+                    # 🔒 قفل کردن لینک‌ها از پنل ادمین
+                    if data == "lock_links":
+                        LINKS_LOCKED = True
+                        send_request("sendMessage", {"chat_id": user_id, "text": "🔒 **لینک‌ها با موفقیت قفل شدند.**"})
+                    
+                    # 🔓 باز کردن لینک‌ها از پنل ادمین
+                    if data == "unlock_links":
+                        LINKS_LOCKED = False
+                        send_request("sendMessage", {"chat_id": user_id, "text": "🔓 **لینک‌ها با موفقیت باز شدند.**"})
+
                     if data == "admin_broadcast":
                         admin_states[user_id] = {'step': 'choose_target'}
                         kb = json.dumps({"inline_keyboard": [[{"text": "ارسال به پیوی همه", "callback_data": "target_pv"}],[{"text": "ارسال به یک گپ", "callback_data": "target_group"}],[{"text": "ارسال به همه گپ‌ها", "callback_data": "target_all"}]]}, ensure_ascii=False)
