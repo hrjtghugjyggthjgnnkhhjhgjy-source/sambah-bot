@@ -1,273 +1,13 @@
-import urllib.request
-import json
-import uuid
 import time
 import os
-from datetime import datetime, timezone, timedelta
+import json
+from config import *
+from helpers import *
+from game import games, get_board_keyboard, check_winner
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-if not BOT_TOKEN:
-    print("❌ خطا: توکن ربات تنظیم نشده است!")
-    exit()
-
-CHAT_ID_SAMBAH_B = '4884670320'
-CHAT_ID_ETTELA_B = '5900955714'
-CHAT_ID_SAMBAH_A = '4652272518'
-CHAT_ID_ETTELA_A = '4491248758'
-CHAT_ID_HAMALAT = '5681028578'
-CHAT_ID_DOORHAMI = '6023524639'
-CHAT_ID_VORUDI = '5559869385'
-CHAT_ID_AMIRALI = '4853834278'
-CHAT_ID_MAJID = '5422739931'
-CHAT_ID_TITAP = '5562715565'
-
-BLOCKED_ROBOTS = ['940993529']
-
-CHATS_INFO = {
-    CHAT_ID_SAMBAH_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)",
-    CHAT_ID_ETTELA_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐁)",
-    CHAT_ID_SAMBAH_A: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐀)",
-    CHAT_ID_ETTELA_A: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐀)",
-    CHAT_ID_HAMALAT: "⚔️𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬⚔️",
-    CHAT_ID_DOORHAMI: "🎊𝗦𝗮𝗺𝗯𝗮𝗵 𝗚𝗮𝗺𝗲𝘀🎊",
-    CHAT_ID_VORUDI: "🚷𝗦𝗮𝗺𝗯𝗮 𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆🚷",
-    CHAT_ID_AMIRALI: "𝐀𝐦𝐢𝐫𝐀𝐥𝐢 𝐂𝐡𝐚𝐭",
-    CHAT_ID_MAJID: "𝐌𝐚𝐣𝐢𝐝 𝐂𝐡𝐚𝐭",
-    CHAT_ID_TITAP: "𝐓𝐢𝐭𝐚𝐩 𝐂𝐡𝐚𝐭"
-}
-
-ALLOWED_CHATS = list(CHATS_INFO.keys())
-BOT_ADMINS = ['724704269', '566594483', '2065233217']
-
-FALLBACK_LINK_SAMBAH_B = "https://ble.ir/join/4F2HQJ3rpD"
-FALLBACK_LINK_ETTELA_B = "https://ble.ir/join/4zejnKnWu5"
-FALLBACK_LINK_SAMBAH_A = "https://ble.ir/join/83tUiWjnM7"
-FALLBACK_LINK_ETTELA_A = "https://ble.ir/join/"
-FALLBACK_LINK_HAMALAT = "https://ble.ir/join/JA8nUskQGD"
-FALLBACK_LINK_DOORHAMI = "https://ble.ir/join/8wN5aYsMf2"
-FALLBACK_LINK_VORUDI = "https://ble.ir/join/2ECrbAhGsE"
-FALLBACK_LINK_AMIRALI = "https://ble.ir/join/AvWobZ1w2R"
-FALLBACK_LINK_MAJID = "https://ble.ir/join/2PvmzANtGf"
-FALLBACK_LINK_TITAP = "https://ble.ir/join/CaKiHc9jYm"
-
-current_links = {
-    CHAT_ID_SAMBAH_B: FALLBACK_LINK_SAMBAH_B,
-    CHAT_ID_ETTELA_B: FALLBACK_LINK_ETTELA_B,
-    CHAT_ID_SAMBAH_A: FALLBACK_LINK_SAMBAH_A,
-    CHAT_ID_ETTELA_A: FALLBACK_LINK_ETTELA_A,
-    CHAT_ID_HAMALAT: FALLBACK_LINK_HAMALAT,
-    CHAT_ID_DOORHAMI: FALLBACK_LINK_DOORHAMI,
-    CHAT_ID_VORUDI: FALLBACK_LINK_VORUDI,
-    CHAT_ID_AMIRALI: FALLBACK_LINK_AMIRALI,
-    CHAT_ID_MAJID: FALLBACK_LINK_MAJID,
-    CHAT_ID_TITAP: FALLBACK_LINK_TITAP
-}
-
-VIDEO_CACHE_FILE = 'welcome_video.txt'
-USERS_DB_FILE = 'users_data.json'
-BANNED_USERS_FILE = 'banned_users.json'
-
-LINKS_LOCKED = False
-
-PV_WELCOME_TEXT = """درود ✨
-کلن بزرگ 𓄂SAMBAH𓆃 عضو گیری میکند 
-«*سمباح:سازمان مبارزه با بی اخلاقی و بی حیایی* »
-مهم نیست امروز شروع کرده باشی در هر سطحی هر لولی حتی تازه کارترین هارو قوی میکنیم 🚀
-
-💸آموزش برداشت خودکار معدن
-💹قوی کردن اکانت 
-🔮رسیدن به کریستال 
-✨برای عضویت و سوالات درباره کلن به دکمه‌های زیر مراجعه کنید:"""
-
-caption_template = """درود {name} ✨
-اگه تو واحد B هستی حتما یکی از سلاطینی🙌
-
-*قوانین کلن بزرگ سمباح واحد B*
-
-*1_* تگ سمباح رو حتما روی اسمتون بزارید به این صورت  𓄂Name𓆃 
-(ترجیحا اسم انگلیسی باشه)
-
-*2_* از فحاشی کردن به همدیگه یا به افراد دیگه در کلن های دیگه به خصوص *فحش ناموسی* خودداری کنید
-
-*3_* هیچ کس حق درخواست ادمینی نداره هرکس صلاح باشه خودمون ادمین میکنیم 
-
-*4_* هیچ گپی بدون اجازه ادمین ها نمیرید که ازتون پیام بگیرن چ همچنان در دیدگاه کانالی هم که نمیشناسید پیام نمیدید 
-
-*5_* حق بی احترامی به ادمین هارو ندارید 
-
-*6_* برداشت خودکار معدن که اموزشش گذاشته شده اجباریه و همه باید تنظیم کنن کار سختی هم نیست اگر نشد بله خودتونو بروز کنید  
-
-*7_* به هیچ وجه نبینم کسی برای سکه یا رنک هم کلنی _بدون اجازه _ بزنه اگه اینکارو کرد بهتره قبل از اینکه کیک شه بره
-
-*8_* اگه تو گپی از دشمنی پیام گرفتید باید کیکش کنید مالکیت گپ رو به لیدرا بدید 
-
-*9_* گروهایی که شما باید عضو باشید یکی اطلاع رسانی و یکی گپ سمباح هستش و دورهمی سمباح که اجباری نیستش و همه باید تو ورودی پیام گذاشته باشن 
-
-*10_* هیچکس حق دادن هیچ‌گونه اطلاعاتی از کلن نداره بخصوص لینک دادن و هیچ عضوی بدون اجازه نمیارید هرکس مدنظر بود به ادمینا اطلاع بدید
-
-اگه خوندید و قبول دارید بنویسید قبول دارم ✅
-خوش بگذرونید🚀"""
-
-admin_states = {}
-games = {}
-
-def load_banned_users():
-    if os.path.exists(BANNED_USERS_FILE):
-        with open(BANNED_USERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return []
-
-def save_banned_users(banned_list):
-    with open(BANNED_USERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(banned_list, f)
-
-def is_banned(user_id):
-    return str(user_id) in load_banned_users()
-
-def ban_user(user_id):
-    banned = load_banned_users()
-    if str(user_id) not in banned:
-        banned.append(str(user_id))
-        save_banned_users(banned)
-
-def unban_user(user_id):
-    banned = load_banned_users()
-    if str(user_id) in banned:
-        banned.remove(str(user_id))
-        save_banned_users(banned)
-
-def save_user_data(user_id, user_name):
-    users = {}
-    if os.path.exists(USERS_DB_FILE):
-        with open(USERS_DB_FILE, 'r', encoding='utf-8') as f:
-            try:
-                users = json.load(f)
-            except:
-                users = {}
-    users[str(user_id)] = user_name
-    with open(USERS_DB_FILE, 'w', encoding='utf-8') as f:
-        json.dump(users, f, ensure_ascii=False, indent=4)
-
-def is_link_time_blocked():
-    iran_tz = timezone(timedelta(hours=3, minutes=30))
-    now = datetime.now(iran_tz)
-    hour = now.hour
-    if hour >= 23 or hour < 10:
-        return True
-    return False
-
-def send_request(method, data=None):
-    url = f"https://tapi.bale.ai/bot{BOT_TOKEN}/{method}"
-    if data:
-        data = json.dumps(data).encode('utf-8')
-        req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
-    else:
-        req = urllib.request.Request(url)
-    try:
-        with urllib.request.urlopen(req) as response:
-            return json.loads(response.read().decode('utf-8'))
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
-def is_admin(chat_id, user_id):
-    if str(user_id) in BOT_ADMINS: return True
-    res = send_request("getChatMember", {"chat_id": chat_id, "user_id": user_id})
-    if res.get("ok") and res["result"].get("status") in ["creator", "administrator"]:
-        return True
-    return False
-
-def get_link(chat_id):
-    res = send_request("exportChatInviteLink", {"chat_id": chat_id})
-    if res.get("ok"):
-        current_links[chat_id] = res["result"]
-        return res["result"]
-    return current_links.get(chat_id, "https://ble.ir/")
-
-def get_welcome_keyboard():
-    if LINKS_LOCKED or is_link_time_blocked():
-        return json.dumps({"inline_keyboard": []})
-    return json.dumps({
-        "inline_keyboard": [
-            [{"text": '💬 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)', "url": get_link(CHAT_ID_SAMBAH_B)}],
-            [{"text": '🔔 𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬 (𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
-            [{"text": '⚔️ 𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬', "url": get_link(CHAT_ID_HAMALAT)}],
-            [{"text": '🎊 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐚𝐦𝐞𝐬', "url": get_link(CHAT_ID_DOORHAMI)}]
-        ]
-    }, ensure_ascii=False)
-
-def get_links_keyboard():
-    return json.dumps({
-        "inline_keyboard": [
-            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)', "url": get_link(CHAT_ID_SAMBAH_B)}],
-            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
-            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐀)', "url": get_link(CHAT_ID_SAMBAH_A)}],
-            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐀)', "url": get_link(CHAT_ID_ETTELA_A)}],
-            [{"text": '⚔️𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬⚔️', "url": get_link(CHAT_ID_HAMALAT)}],
-            [{"text": '🎊𝗦𝗮𝗺𝗯𝗮𝗵 𝗚𝗮𝗺𝗲𝘀🎊', "url": get_link(CHAT_ID_DOORHAMI)}],
-            [{"text": '🚷𝗦𝗮𝗺𝗯𝗮 𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆🚷', "url": get_link(CHAT_ID_VORUDI)}],
-            [{"text": '𝐀𝐦𝐢𝐫𝐀𝐥𝐢 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_AMIRALI)}],
-            [{"text": '𝐌𝐚𝐣𝐢𝐝 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_MAJID)}],
-            [{"text": '𝐓𝐢𝐭𝐚𝐩 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_TITAP)}]
-        ]
-    }, ensure_ascii=False)
-
-def get_pv_keyboard():
-    return json.dumps({
-        "inline_keyboard": [
-            [{"text": '🎮 ربات بازی (StarWar)', "url": "https://ble.ir/StarWarFrg_RoBot"}],
-            [{"text": '📩 جهت عضویت در کلن پیام دهید (۱)', "url": "https://ble.ir/SAMBAHY"}],
-            [{"text": '📩 جهت عضویت در کلن پیام دهید (۲)', "url": "https://ble.ir/mmdrza168"}]
-        ]
-    }, ensure_ascii=False)
-
-def send_video_to_target(video_file_id, user_name="دوست عزیز"):
-    url = f"https://tapi.bale.ai/bot{BOT_TOKEN}/sendVideo"
-    boundary = uuid.uuid4().hex
-    body = b''
-    fields = {
-        'chat_id': CHAT_ID_SAMBAH_B,
-        'video': video_file_id,
-        'caption': caption_template.format(name=user_name),
-        'parse_mode': 'Markdown',
-        'reply_markup': get_welcome_keyboard()
-    }
-    for key, value in fields.items():
-        body += f'--{boundary}\r\n'.encode('utf-8')
-        body += f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode('utf-8')
-        body += f'{value}\r\n'.encode('utf-8')
-    body += f'--{boundary}--\r\n'.encode('utf-8')
-    req = urllib.request.Request(url, data=body)
-    req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
-    try:
-        with urllib.request.urlopen(req) as response:
-            return json.loads(response.read().decode('utf-8'))
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
-def get_board_keyboard(board):
-    keyboard = []
-    for i in range(0, 16, 4):
-        row = []
-        for j in range(4):
-            idx = i + j
-            text = board[idx] if board[idx] != "" else "⬜"
-            row.append({"text": text, "callback_data": f"doz_{idx}"})
-        keyboard.append(row)
-    return json.dumps({"inline_keyboard": keyboard})
-
-def check_winner(board, player):
-    for i in range(4):
-        if all(board[i*4 + j] == player for j in range(4)): return True
-    for j in range(4):
-        if all(board[i*4 + j] == player for i in range(4)): return True
-    if all(board[i*4 + i] == player for i in range(4)): return True
-    if all(board[i*4 + (3-i)] == player for i in range(4)): return True
-    return False
-
-saved_video_id = None
-if os.path.exists(VIDEO_CACHE_FILE):
-    with open(VIDEO_CACHE_FILE, 'r') as f:
-        saved_video_id = f.read().strip()
+# 🔐 گرفتن آیدی خود ربات (برای سیستم خروج خودکار)
+me = send_request("getMe")
+BOT_ID = str(me["result"]["id"]) if me.get("ok") else ""
 
 print("⏳ در حال پاکسازی...")
 updates = send_request("getUpdates", {"offset": -1})
@@ -290,6 +30,13 @@ while True:
                 if "message" in update:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
+                    
+                    # 🚪 سیستم خروج خودکار از گپ‌های غیرمجاز (به جز پیوی خود ربات)
+                    if chat_id not in ALLOWED_CHATS and chat_id != str(msg["from"]["id"]):
+                        print(f"⚠️ ربات به گپ غیرمجاز {chat_id} اضافه شد. در حال خروج...")
+                        send_request("leaveChat", {"chat_id": chat_id})
+                        continue 
+                        
                     user_id = str(msg["from"]["id"])
                     user_name = msg["from"].get("first_name", "Player")
                     
@@ -304,7 +51,7 @@ while True:
                     if not msg.get("from", {}).get("is_bot"):
                         save_user_data(user_id, user_name)
                     
-                    # 🎮 بازی دوز
+                    # 🎮 شروع بازی دوز
                     if "text" in msg and msg["text"].strip() == 'دوز':
                         if "reply_to_message" in msg:
                             target_id = str(msg["reply_to_message"]["from"]["id"])
@@ -314,7 +61,7 @@ while True:
                             send_request("sendMessage", {"chat_id": chat_id, "text": f"🎮 **بازی دوز شروع شد!**\n\n❌ {user_name}\n⭕️ {target_name}", "reply_markup": get_board_keyboard(games[chat_id]['board'])})
                             continue
 
-                    # 💬 مدیریت چت خصوصی (پیوی)
+                    # 💬 مدیریت پیوی (پنل ادمین)
                     if chat_id == user_id:
                         if user_id not in BOT_ADMINS:
                             if "text" in msg and msg["text"].strip() == '/start':
@@ -337,7 +84,7 @@ while True:
                             send_request("sendMessage", {"chat_id": chat_id, "text": "👑 **پنل مدیریت**\nخوش آمدید ادمین عزیز.", "reply_markup": kb, "parse_mode": "Markdown"})
                             continue
 
-                    # 🛠 پردازش وضعیت‌های ادمین (ذخیره فیلم، ارسال سراسری و...)
+                    # 🛠 پردازش وضعیت‌های ادمین
                     if user_id in admin_states:
                         state = admin_states[user_id]
                         
@@ -359,8 +106,7 @@ while True:
                             if "video" in msg:
                                 with open(VIDEO_CACHE_FILE, 'w') as f:
                                     f.write(msg["video"]["file_id"])
-                                saved_video_id = msg["video"]["file_id"]
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **فیلم ذخیره شد.**"})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": f"✅ **فیلم خوش‌آمدگویی ذخیره شد.**\n\n🔑 **آیدی این فیلم:**\n`{msg['video']['file_id']}`\n\n_(این آیدی رو کپی کن و توی کد config.py، به عنوان DEFAULT_VIDEO_ID بذار تا با ریستارت سرور پاک نشه)_"})
                             else:
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "❌ لطفاً **فیلم** بفرستید."})
                             del admin_states[user_id]
@@ -395,8 +141,6 @@ while True:
                     # 🔗 دستورات متنی توی گپ‌ها
                     if "text" in msg:
                         text = msg["text"].strip()
-                        
-                        # دستور لینک ها
                         if text in ['لینک', 'لینک ها'] and chat_id == CHAT_ID_SAMBAH_B:
                             if LINKS_LOCKED:
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "⛔️ **لینک‌ها توسط ادمین قفل شده‌اند.**"})
@@ -405,7 +149,6 @@ while True:
                             else:
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "🔗 **لیست لینک‌ها:**", "parse_mode": "Markdown", "reply_markup": get_links_keyboard()})
                         
-                        # دستور باطل کردن لینک
                         if 'باطل کردن لینک' in text and chat_id == CHAT_ID_SAMBAH_B:
                             if not is_admin(chat_id, user_id): continue
                             send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌ها..."})
@@ -422,7 +165,7 @@ while True:
                             send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
                             send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **گزارش ارسال شد.**", "parse_mode": "Markdown"})
 
-                # 🖱 پردازش کلیک روی دکمه‌های شیشه‌ای (Callback Query)
+                # 🖱 پردازش کلیک روی دکمه‌های شیشه‌ای
                 if "callback_query" in update:
                     cq = update["callback_query"]
                     cq_id = cq["id"]
@@ -438,7 +181,7 @@ while True:
                             send_request("sendMessage", {"chat_id": admin, "text": f"📩 کاربر {user_id} درخواست لغو بن داده است."})
                         continue
 
-                    # 🎮 پردازش دکمه‌های بازی دوز
+                    # 🎮 پردازش دکمه‌های دوز
                     if data.startswith("doz_"):
                         if chat_id not in games: continue
                         game = games[chat_id]
@@ -465,7 +208,6 @@ while True:
 
                     if user_id not in BOT_ADMINS: continue
                     
-                    # 🚫 دکمه‌های بن
                     if data == "admin_ban":
                         admin_states[user_id] = {'step': 'waiting_for_ban_id'}
                         send_request("sendMessage", {"chat_id": user_id, "text": "🚫 **آیدی عددی کاربر را برای بن کردن بفرستید:**"})
@@ -485,7 +227,6 @@ while True:
                             send_request("sendMessage", {"chat_id": user_id, "text": "✅ هیچ کاربری بن نشده است."})
                         continue
 
-                    # 🦉 دکمه پیدا کردن جغدها
                     if data == "find_owls":
                         if os.path.exists(USERS_DB_FILE):
                             with open(USERS_DB_FILE, 'r', encoding='utf-8') as f:
@@ -500,7 +241,6 @@ while True:
                                 send_request("sendMessage", {"chat_id": user_id, "text": "✅ جغدی یافت نشد."})
                         continue
 
-                    # 🔒 دکمه‌های قفل و باز کردن لینک
                     if data == "lock_links":
                         LINKS_LOCKED = True
                         send_request("sendMessage", {"chat_id": user_id, "text": "🔒 لینک‌ها قفل شد."})
@@ -508,7 +248,6 @@ while True:
                         LINKS_LOCKED = False
                         send_request("sendMessage", {"chat_id": user_id, "text": "🔓 لینک‌ها باز شد."})
                     
-                    # 📢 دکمه‌های پیام سراسری
                     if data == "admin_broadcast":
                         admin_states[user_id] = {'step': 'choose_target'}
                         kb = json.dumps({"inline_keyboard": [[{"text": "پیوی همه", "callback_data": "target_pv"}],[{"text": "یک گپ", "callback_data": "target_group"}],[{"text": "همه گپ‌ها", "callback_data": "target_all"}]]}, ensure_ascii=False)
@@ -533,16 +272,30 @@ while True:
                         admin_states[user_id] = {'step': 'get_broadcast_text', 'target': target_cid}
                         send_request("sendMessage", {"chat_id": user_id, "text": f"📝 متن رو بفرست:"})
 
-                # 🎉 خوش‌آمدگویی برای کاربر جدید
+                # 🎉 خوش‌آمدگویی و سیستم خروج خودکار
                 if "message" in update and "new_chat_members" in update["message"]:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
+                    
+                    # 🚪 اگه ربات رو به گپ غیرمجاز اضافه کردن، خودش رو بیرون بندازه
+                    if chat_id not in ALLOWED_CHATS:
+                        send_request("leaveChat", {"chat_id": chat_id})
+                        continue
+                        
                     if chat_id == CHAT_ID_SAMBAH_B:
+                        # 🔄 خوندن مجدد آیدی فیلم از فایل برای اطمینان
+                        current_video_id = DEFAULT_VIDEO_ID
+                        if os.path.exists(VIDEO_CACHE_FILE):
+                            with open(VIDEO_CACHE_FILE, 'r') as f:
+                                file_content = f.read().strip()
+                                if file_content:
+                                    current_video_id = file_content
+                                    
                         for member in msg["new_chat_members"]:
                             if member.get("is_bot"): continue
                             user_name = member.get("first_name", "دوست عزیز")
-                            if saved_video_id:
-                                send_video_to_target(saved_video_id, user_name)
+                            if current_video_id and current_video_id != "YOUR_DEFAULT_VIDEO_ID_HERE":
+                                send_video_to_target(current_video_id, user_name)
 
         time.sleep(0.2)
 
