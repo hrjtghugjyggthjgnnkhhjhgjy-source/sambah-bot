@@ -5,13 +5,11 @@ import time
 import os
 from datetime import datetime, timezone, timedelta
 
-# 🔐 خواندن توکن از محیط سرور
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 if not BOT_TOKEN:
     print("❌ خطا: توکن ربات تنظیم نشده است!")
     exit()
 
-# 🎯 آیدی عددی گپ‌ها
 CHAT_ID_SAMBAH_B = '4884670320'
 CHAT_ID_ETTELA_B = '5900955714'
 CHAT_ID_SAMBAH_A = '4652272518'
@@ -41,7 +39,6 @@ CHATS_INFO = {
 ALLOWED_CHATS = list(CHATS_INFO.keys())
 BOT_ADMINS = ['724704269', '566594483', '2065233217']
 
-# لینک‌های پشتیبان
 FALLBACK_LINK_SAMBAH_B = "https://ble.ir/join/4F2HQJ3rpD"
 FALLBACK_LINK_ETTELA_B = "https://ble.ir/join/4zejnKnWu5"
 FALLBACK_LINK_SAMBAH_A = "https://ble.ir/join/83tUiWjnM7"
@@ -307,6 +304,7 @@ while True:
                     if not msg.get("from", {}).get("is_bot"):
                         save_user_data(user_id, user_name)
                     
+                    # 🎮 بازی دوز
                     if "text" in msg and msg["text"].strip() == 'دوز':
                         if "reply_to_message" in msg:
                             target_id = str(msg["reply_to_message"]["from"]["id"])
@@ -316,6 +314,7 @@ while True:
                             send_request("sendMessage", {"chat_id": chat_id, "text": f"🎮 **بازی دوز شروع شد!**\n\n❌ {user_name}\n⭕️ {target_name}", "reply_markup": get_board_keyboard(games[chat_id]['board'])})
                             continue
 
+                    # 💬 مدیریت چت خصوصی (پیوی)
                     if chat_id == user_id:
                         if user_id not in BOT_ADMINS:
                             if "text" in msg and msg["text"].strip() == '/start':
@@ -338,6 +337,7 @@ while True:
                             send_request("sendMessage", {"chat_id": chat_id, "text": "👑 **پنل مدیریت**\nخوش آمدید ادمین عزیز.", "reply_markup": kb, "parse_mode": "Markdown"})
                             continue
 
+                    # 🛠 پردازش وضعیت‌های ادمین (ذخیره فیلم، ارسال سراسری و...)
                     if user_id in admin_states:
                         state = admin_states[user_id]
                         
@@ -392,8 +392,11 @@ while True:
                             del admin_states[user_id]
                             continue
 
+                    # 🔗 دستورات متنی توی گپ‌ها
                     if "text" in msg:
                         text = msg["text"].strip()
+                        
+                        # دستور لینک ها
                         if text in ['لینک', 'لینک ها'] and chat_id == CHAT_ID_SAMBAH_B:
                             if LINKS_LOCKED:
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "⛔️ **لینک‌ها توسط ادمین قفل شده‌اند.**"})
@@ -402,6 +405,7 @@ while True:
                             else:
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "🔗 **لیست لینک‌ها:**", "parse_mode": "Markdown", "reply_markup": get_links_keyboard()})
                         
+                        # دستور باطل کردن لینک
                         if 'باطل کردن لینک' in text and chat_id == CHAT_ID_SAMBAH_B:
                             if not is_admin(chat_id, user_id): continue
                             send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌ها..."})
@@ -418,6 +422,7 @@ while True:
                             send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
                             send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **گزارش ارسال شد.**", "parse_mode": "Markdown"})
 
+                # 🖱 پردازش کلیک روی دکمه‌های شیشه‌ای (Callback Query)
                 if "callback_query" in update:
                     cq = update["callback_query"]
                     cq_id = cq["id"]
@@ -433,6 +438,7 @@ while True:
                             send_request("sendMessage", {"chat_id": admin, "text": f"📩 کاربر {user_id} درخواست لغو بن داده است."})
                         continue
 
+                    # 🎮 پردازش دکمه‌های بازی دوز
                     if data.startswith("doz_"):
                         if chat_id not in games: continue
                         game = games[chat_id]
@@ -459,6 +465,7 @@ while True:
 
                     if user_id not in BOT_ADMINS: continue
                     
+                    # 🚫 دکمه‌های بن
                     if data == "admin_ban":
                         admin_states[user_id] = {'step': 'waiting_for_ban_id'}
                         send_request("sendMessage", {"chat_id": user_id, "text": "🚫 **آیدی عددی کاربر را برای بن کردن بفرستید:**"})
@@ -478,6 +485,7 @@ while True:
                             send_request("sendMessage", {"chat_id": user_id, "text": "✅ هیچ کاربری بن نشده است."})
                         continue
 
+                    # 🦉 دکمه پیدا کردن جغدها
                     if data == "find_owls":
                         if os.path.exists(USERS_DB_FILE):
                             with open(USERS_DB_FILE, 'r', encoding='utf-8') as f:
@@ -492,6 +500,7 @@ while True:
                                 send_request("sendMessage", {"chat_id": user_id, "text": "✅ جغدی یافت نشد."})
                         continue
 
+                    # 🔒 دکمه‌های قفل و باز کردن لینک
                     if data == "lock_links":
                         LINKS_LOCKED = True
                         send_request("sendMessage", {"chat_id": user_id, "text": "🔒 لینک‌ها قفل شد."})
@@ -499,6 +508,7 @@ while True:
                         LINKS_LOCKED = False
                         send_request("sendMessage", {"chat_id": user_id, "text": "🔓 لینک‌ها باز شد."})
                     
+                    # 📢 دکمه‌های پیام سراسری
                     if data == "admin_broadcast":
                         admin_states[user_id] = {'step': 'choose_target'}
                         kb = json.dumps({"inline_keyboard": [[{"text": "پیوی همه", "callback_data": "target_pv"}],[{"text": "یک گپ", "callback_data": "target_group"}],[{"text": "همه گپ‌ها", "callback_data": "target_all"}]]}, ensure_ascii=False)
@@ -523,6 +533,7 @@ while True:
                         admin_states[user_id] = {'step': 'get_broadcast_text', 'target': target_cid}
                         send_request("sendMessage", {"chat_id": user_id, "text": f"📝 متن رو بفرست:"})
 
+                # 🎉 خوش‌آمدگویی برای کاربر جدید
                 if "message" in update and "new_chat_members" in update["message"]:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
