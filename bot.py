@@ -22,8 +22,10 @@ CHAT_ID_VORUDI = '5559869385'
 CHAT_ID_AMIRALI = '4853834278'
 CHAT_ID_MAJID = '5422739931'
 CHAT_ID_TITAP = '5562715565'
+CHAT_ID_GAMES = '5562715565' 
 
-# 🎨 اسم‌های جدید (طبق فونت‌های ارسالی شما)
+BLOCKED_ROBOTS = ['940993529']
+
 CHATS_INFO = {
     CHAT_ID_SAMBAH_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)",
     CHAT_ID_ETTELA_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐁)",
@@ -108,13 +110,12 @@ caption_template = """درود {name} ✨
 خوش بگذرونید🚀"""
 
 admin_states = {}
+games = {}
 
-# ⏰ تابع بررسی زمان (تغییر به ساعت 10 صبح)
 def is_link_time_blocked():
     iran_tz = timezone(timedelta(hours=3, minutes=30))
     now = datetime.now(iran_tz)
     hour = now.hour
-    # از ساعت ۲۳ شب تا ۱۰ صبح ممنوعه
     if hour >= 23 or hour < 10:
         return True
     return False
@@ -161,19 +162,16 @@ def get_link(chat_id):
 def get_welcome_keyboard():
     if is_link_time_blocked():
         return json.dumps({"inline_keyboard": []})
-        
-    # کیبورد خوش‌آمدگویی با اسم‌های جدید
     return json.dumps({
         "inline_keyboard": [
-            [{"text": '𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)💬', "url": get_link(CHAT_ID_SAMBAH_B)}],
-            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔(𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
-            [{"text": '⚔️𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬⚔️', "url": get_link(CHAT_ID_HAMALAT)}],
-            [{"text": '🎊𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐚𝐦𝐞𝐬🎊', "url": get_link(CHAT_ID_DOORHAMI)}]
+            [{"text": '💬 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)', "url": get_link(CHAT_ID_SAMBAH_B)}],
+            [{"text": '🔔 𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬 (𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
+            [{"text": '⚔️ 𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬', "url": get_link(CHAT_ID_HAMALAT)}],
+            [{"text": '🎊 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐚𝐦𝐞𝐬', "url": get_link(CHAT_ID_DOORHAMI)}]
         ]
     }, ensure_ascii=False)
 
 def get_links_keyboard():
-    # منوی ۱۰ دکمه‌ای لاکچری
     return json.dumps({
         "inline_keyboard": [
             [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)', "url": get_link(CHAT_ID_SAMBAH_B)}],
@@ -189,12 +187,13 @@ def get_links_keyboard():
         ]
     }, ensure_ascii=False)
 
+# ✨ تغییر دکمه‌های پیوی طبق خواسته شما
 def get_pv_keyboard():
     return json.dumps({
         "inline_keyboard": [
             [{"text": '🎮 ربات بازی (StarWar)', "url": "https://ble.ir/StarWarFrg_RoBot"}],
-            [{"text": '➕ عضویت در کلن (۱)', "url": "https://ble.ir/SAMBAHY"}],
-            [{"text": '➕ عضویت در کلن (۲)', "url": "https://ble.ir/mmdrza168"}]
+            [{"text": '📩 جهت عضویت در کلن پیام دهید (۱)', "url": "https://ble.ir/SAMBAHY"}],
+            [{"text": '📩 جهت عضویت در کلن پیام دهید (۲)', "url": "https://ble.ir/mmdrza168"}]
         ]
     }, ensure_ascii=False)
 
@@ -221,6 +220,26 @@ def send_video_to_target(video_file_id, user_name="دوست عزیز"):
             return json.loads(response.read().decode('utf-8'))
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+def get_board_keyboard(board):
+    keyboard = []
+    for i in range(0, 16, 4):
+        row = []
+        for j in range(4):
+            idx = i + j
+            text = board[idx] if board[idx] != "" else "⬜"
+            row.append({"text": text, "callback_data": f"doz_{idx}"})
+        keyboard.append(row)
+    return json.dumps({"inline_keyboard": keyboard})
+
+def check_winner(board, player):
+    for i in range(4):
+        if all(board[i*4 + j] == player for j in range(4)): return True
+    for j in range(4):
+        if all(board[i*4 + j] == player for i in range(4)): return True
+    if all(board[i*4 + i] == player for i in range(4)): return True
+    if all(board[i*4 + (3-i)] == player for i in range(4)): return True
+    return False
 
 saved_video_id = None
 if os.path.exists(VIDEO_CACHE_FILE):
@@ -249,18 +268,48 @@ while True:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
                     user_id = str(msg["from"]["id"])
+                    user_name = msg["from"].get("first_name", "Player")
                     
+                    if user_id in BLOCKED_ROBOTS or msg.get("from", {}).get("is_bot"):
+                        continue
+
                     if not msg.get("from", {}).get("is_bot"):
                         save_user(user_id)
                     
+                    if "text" in msg and msg["text"].strip() == 'دوز':
+                        if "reply_to_message" in msg:
+                            target_id = str(msg["reply_to_message"]["from"]["id"])
+                            target_name = msg["reply_to_message"]["from"].get("first_name", "Player")
+                            
+                            if target_id == user_id:
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "❌ نمی‌تونی با خودت بازی کنی!"})
+                                continue
+                                
+                            if target_id in BLOCKED_ROBOTS:
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "❌ نمی‌تونی با ربات‌ها بازی کنی!"})
+                                continue
+
+                            games[chat_id] = {
+                                'board': [""] * 16,
+                                'turn': '❌',
+                                'p1': user_id,
+                                'p2': target_id,
+                                'p1_name': user_name,
+                                'p2_name': target_name,
+                                'active': True
+                            }
+                            
+                            send_request("sendMessage", {
+                                "chat_id": chat_id,
+                                "text": f"🎮 **بازی دوز شروع شد!**\n\n❌ {user_name} (نفر اول)\n⭕️ {target_name} (نفر دوم)\n\nنوبت: ❌",
+                                "reply_markup": get_board_keyboard(games[chat_id]['board'])
+                            })
+                            continue
+
                     if chat_id == user_id:
                         if user_id not in BOT_ADMINS:
                             if "text" in msg and msg["text"].strip() == '/start':
-                                send_request("sendMessage", {
-                                    "chat_id": chat_id, 
-                                    "text": PV_WELCOME_TEXT, 
-                                    "reply_markup": get_pv_keyboard()
-                                })
+                                send_request("sendMessage", {"chat_id": chat_id, "text": PV_WELCOME_TEXT, "reply_markup": get_pv_keyboard()})
                             continue 
                         
                         if "text" in msg and msg["text"].strip() in ['/start', 'پنل', '/panel']:
@@ -275,37 +324,31 @@ while True:
 
                     if user_id in admin_states:
                         state = admin_states[user_id]
-                        
                         if state['step'] == 'waiting_for_video':
                             if "video" in msg:
                                 with open(VIDEO_CACHE_FILE, 'w') as f:
                                     f.write(msg["video"]["file_id"])
                                 saved_video_id = msg["video"]["file_id"]
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **فیلم خوش‌آمدگویی جدید ذخیره شد.**"})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **فیلم ذخیره شد.**"})
                             else:
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "❌ لطفاً فقط یک **فیلم** (ویدیو) بفرستید."})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "❌ لطفاً **فیلم** بفرستید."})
                             del admin_states[user_id]
                             continue
-
                         if "photo" in msg or "video" in msg:
                             if state['step'] in ['get_text', 'get_broadcast_text']:
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "❌ **خطا:** برای ارسال سراسری فقط می‌توانید متن بفرستید."})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "❌ فقط متن مجاز است."})
                                 continue
-                        
                         if state['step'] == 'get_text' and state['target'] == 'pv' and 'text' in msg:
                             if os.path.exists(USERS_DB_FILE):
                                 with open(USERS_DB_FILE, 'r') as f:
                                     all_users = f.read().splitlines()
                                 count = 0
                                 for uid in all_users:
-                                    res = send_request("sendMessage", {"chat_id": uid, "text": f"📢 [پیام سراسری]\n\n{msg['text']}"})
+                                    res = send_request("sendMessage", {"chat_id": uid, "text": f"📢 [سراسری]\n\n{msg['text']}"})
                                     if res.get("ok"): count += 1
-                                send_request("sendMessage", {"chat_id": chat_id, "text": f"✅ پیام به {count} کاربر ارسال شد."})
-                            else:
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "❌ هنوز کاربری ربات رو استارت نکرده."})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": f"✅ به {count} نفر ارسال شد."})
                             del admin_states[user_id]
                             continue
-                            
                         if state['step'] == 'get_broadcast_text' and 'text' in msg:
                             target_cid = state['target']
                             if target_cid == 'all_groups':
@@ -313,32 +356,24 @@ while True:
                                 for cid in CHATS_INFO.keys():
                                     res = send_request("sendMessage", {"chat_id": cid, "text": msg['text']})
                                     if res.get("ok"): success += 1
-                                send_request("sendMessage", {"chat_id": chat_id, "text": f"✅ پیام به {success} گپ ارسال شد."})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": f"✅ به {success} گپ ارسال شد."})
                             else:
                                 send_request("sendMessage", {"chat_id": target_cid, "text": msg['text']})
-                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ پیام سراسری به گپ ارسال شد."})
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "✅ به گپ ارسال شد."})
                             del admin_states[user_id]
                             continue
 
                     if "text" in msg:
                         text = msg["text"].strip()
-                        
                         if text in ['لینک', 'لینک ها'] and chat_id == CHAT_ID_SAMBAH_B:
                             if is_link_time_blocked():
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "⏰ دریافت لینک از ساعت ۲۳ الی ۱۰ ممنوع است."})
                             else:
-                                send_request("sendMessage", {
-                                    "chat_id": chat_id,
-                                    "text": "🔗 **لیست لینک‌های گپ‌های سمباح:**",
-                                    "parse_mode": "Markdown",
-                                    "reply_markup": get_links_keyboard()
-                                })
-                            
+                                send_request("sendMessage", {"chat_id": chat_id, "text": "🔗 **لیست لینک‌ها:**", "parse_mode": "Markdown", "reply_markup": get_links_keyboard()})
                         if 'باطل کردن لینک' in text and chat_id == CHAT_ID_SAMBAH_B:
                             if not is_admin(chat_id, user_id): continue
-                            
                             send_request("sendMessage", {"chat_id": chat_id, "text": "⏳ در حال باطل کردن لینک‌ها..."})
-                            report = "🔗 **گزارش لینک‌ها:**\n\n"
+                            report = "🔗 **گزارش:**\n\n"
                             for c_id, c_name in CHATS_INFO.items():
                                 send_request("revokeChatInviteLink", {"chat_id": c_id, "invite_link": current_links[c_id]})
                                 res_new = send_request("exportChatInviteLink", {"chat_id": c_id})
@@ -347,57 +382,103 @@ while True:
                                     current_links[c_id] = new_link 
                                     report += f"✅ **{c_name}**\n{new_link}\n\n"
                                 else:
-                                    report += f"❌ **{c_name}**\nدلیل: {res_new.get('description', 'ربات ادمین نیست')}\n\n"
+                                    report += f"❌ **{c_name}**\nدلیل: {res_new.get('description')}\n\n"
                             send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
-                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌ها باطل شدند. گزارش به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
+                            send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **گزارش ارسال شد.**", "parse_mode": "Markdown"})
 
                 if "callback_query" in update:
                     cq = update["callback_query"]
                     cq_id = cq["id"]
+                    chat_id = str(cq["message"]["chat"]["id"])
                     user_id = str(cq["from"]["id"])
                     data = cq["data"]
-                    chat_id = str(cq["message"]["chat"]["id"])
+                    message_id = cq["message"]["message_id"]
                     
+                    if data.startswith("doz_"):
+                        if chat_id not in games:
+                            send_request("answerCallbackQuery", {"callback_query_id": cq_id, "text": "بازی پیدا نشد!"})
+                            continue
+                            
+                        game = games[chat_id]
+                        
+                        if not game['active']:
+                            send_request("answerCallbackQuery", {"callback_query_id": cq_id, "text": "بازی تموم شده!"})
+                            continue
+                            
+                        current_turn_player = game['p1'] if game['turn'] == '❌' else game['p2']
+                        if user_id != current_turn_player:
+                            send_request("answerCallbackQuery", {"callback_query_id": cq_id, "text": "نوبت حریفته!"})
+                            continue
+
+                        idx = int(data.split("_")[1])
+                        
+                        if game['board'][idx] != "":
+                            send_request("answerCallbackQuery", {"callback_query_id": cq_id, "text": "این خونه پره!"})
+                            continue
+                            
+                        player_symbol = game['turn']
+                        game['board'][idx] = player_symbol
+                        
+                        if check_winner(game['board'], player_symbol):
+                            game['active'] = False
+                            winner_name = game['p1_name'] if player_symbol == '❌' else game['p2_name']
+                            send_request("editMessageText", {
+                                "chat_id": chat_id,
+                                "message_id": message_id,
+                                "text": f"🎉 **بازی تموم شد!**\n\nبرنده: {player_symbol} {winner_name}",
+                                "reply_markup": get_board_keyboard(game['board'])
+                            })
+                            send_request("answerCallbackQuery", {"callback_query_id": cq_id})
+                            continue
+                            
+                        if "" not in game['board']:
+                            game['active'] = False
+                            send_request("editMessageText", {
+                                "chat_id": chat_id,
+                                "message_id": message_id,
+                                "text": "🤝 **مساوی شد!**",
+                                "reply_markup": get_board_keyboard(game['board'])
+                            })
+                            send_request("answerCallbackQuery", {"callback_query_id": cq_id})
+                            continue
+                            
+                        game['turn'] = '⭕️' if player_symbol == '❌' else '❌'
+                        next_player_name = game['p1_name'] if game['turn'] == '❌' else game['p2_name']
+                        
+                        send_request("editMessageText", {
+                            "chat_id": chat_id,
+                            "message_id": message_id,
+                            "text": f"🎮 **بازی دوز**\n\n❌ {game['p1_name']}\n⭕️ {game['p2_name']}\n\nنوبت: {game['turn']} {next_player_name}",
+                            "reply_markup": get_board_keyboard(game['board'])
+                        })
+                        send_request("answerCallbackQuery", {"callback_query_id": cq_id})
+                        continue
+
                     send_request("answerCallbackQuery", {"callback_query_id": cq_id})
-
                     if user_id not in BOT_ADMINS: continue
-
                     if data == "admin_broadcast":
                         admin_states[user_id] = {'step': 'choose_target'}
-                        kb = json.dumps({
-                            "inline_keyboard": [
-                                [{"text": "ارسال به پیوی همه", "callback_data": "target_pv"}],
-                                [{"text": "ارسال به یک گپ", "callback_data": "target_group"}],
-                                [{"text": "ارسال به همه گپ‌ها", "callback_data": "target_all"}]
-                            ]
-                        }, ensure_ascii=False)
-                        send_request("sendMessage", {"chat_id": user_id, "text": "🎯 کجا می‌خوای پیام سراسری بفرستی؟", "reply_markup": kb})
-
+                        kb = json.dumps({"inline_keyboard": [[{"text": "ارسال به پیوی همه", "callback_data": "target_pv"}],[{"text": "ارسال به یک گپ", "callback_data": "target_group"}],[{"text": "ارسال به همه گپ‌ها", "callback_data": "target_all"}]]}, ensure_ascii=False)
+                        send_request("sendMessage", {"chat_id": user_id, "text": "🎯 کجا؟", "reply_markup": kb})
                     if data == "change_video":
                         admin_states[user_id] = {'step': 'waiting_for_video'}
-                        send_request("sendMessage", {"chat_id": user_id, "text": "🎬 **لطفاً فیلم جدید خوش‌آمدگویی را بفرستید:**"})
-
+                        send_request("sendMessage", {"chat_id": user_id, "text": "🎬 **فیلم جدید رو بفرست:**"})
                     if data == "target_pv":
                         admin_states[user_id] = {'step': 'get_text', 'target': 'pv'}
-                        send_request("sendMessage", {"chat_id": user_id, "text": "📝 متن پیام سراسری رو بفرست (فقط متن):"})
-
+                        send_request("sendMessage", {"chat_id": user_id, "text": "📝 متن رو بفرست:"})
                     if data == "target_all":
                         admin_states[user_id] = {'step': 'get_broadcast_text', 'target': 'all_groups'}
-                        send_request("sendMessage", {"chat_id": user_id, "text": "📝 متن پیام رو بفرست تا به **همه گپ‌ها** ارسال بشه (فقط متن):"})
-
+                        send_request("sendMessage", {"chat_id": user_id, "text": "📝 متن رو بفرست:"})
                     if data == "target_group":
                         admin_states[user_id] = {'step': 'choose_group'}
                         kb = []
                         for cid, cname in CHATS_INFO.items():
                             kb.append([{"text": cname, "callback_data": f"broadcast_{cid}"}])
                         send_request("sendMessage", {"chat_id": user_id, "text": "🎯 کدوم گپ؟", "reply_markup": json.dumps({"inline_keyboard": kb}, ensure_ascii=False)})
-
                     if data.startswith("broadcast_"):
                         target_cid = data.split("_")[1]
                         admin_states[user_id] = {'step': 'get_broadcast_text', 'target': target_cid}
-                        send_request("sendMessage", {"chat_id": user_id, "text": f"📝 متن پیام رو بفرست تا به گپ {CHATS_INFO.get(target_cid, target_cid)} ارسال بشه (فقط متن):"})
-
-                    continue
+                        send_request("sendMessage", {"chat_id": user_id, "text": f"📝 متن رو بفرست:"})
 
                 if "message" in update and "new_chat_members" in update["message"]:
                     msg = update["message"]
