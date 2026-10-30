@@ -22,7 +22,6 @@ CHAT_ID_VORUDI = '5559869385'
 CHAT_ID_AMIRALI = '4853834278'
 CHAT_ID_MAJID = '5422739931'
 CHAT_ID_TITAP = '5562715565'
-CHAT_ID_GAMES = '5562715565' 
 
 BLOCKED_ROBOTS = ['940993529']
 
@@ -526,4 +525,17 @@ while True:
 
                 if "message" in update and "new_chat_members" in update["message"]:
                     msg = update["message"]
-                    chat_id =
+                    chat_id = str(msg["chat"]["id"])
+                    if chat_id == CHAT_ID_SAMBAH_B:
+                        for member in msg["new_chat_members"]:
+                            if member.get("is_bot"): continue
+                            user_name = member.get("first_name", "دوست عزیز")
+                            if saved_video_id:
+                                send_video_to_target(saved_video_id, user_name)
+
+        time.sleep(0.2)
+
+    except KeyboardInterrupt:
+        break
+    except Exception as e:
+        time.sleep(1)
