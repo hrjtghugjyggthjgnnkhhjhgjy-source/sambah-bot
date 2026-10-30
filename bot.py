@@ -165,10 +165,10 @@ def get_welcome_keyboard():
     # کیبورد خوش‌آمدگویی با اسم‌های جدید
     return json.dumps({
         "inline_keyboard": [
-            [{"text": '💬 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)', "url": get_link(CHAT_ID_SAMBAH_B)}],
-            [{"text": '🔔 𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬 (𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
-            [{"text": '⚔️ 𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬', "url": get_link(CHAT_ID_HAMALAT)}],
-            [{"text": '🎊 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐚𝐦𝐞𝐬', "url": get_link(CHAT_ID_DOORHAMI)}]
+            [{"text": '𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)💬', "url": get_link(CHAT_ID_SAMBAH_B)}],
+            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔(𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
+            [{"text": '⚔️𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬⚔️', "url": get_link(CHAT_ID_HAMALAT)}],
+            [{"text": '🎊𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐚𝐦𝐞𝐬🎊', "url": get_link(CHAT_ID_DOORHAMI)}]
         ]
     }, ensure_ascii=False)
 
