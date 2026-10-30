@@ -67,7 +67,6 @@ current_links = {
 VIDEO_CACHE_FILE = 'welcome_video.txt'
 USERS_DB_FILE = 'users.txt'
 
-# متن خوش‌آمدگویی پیوی برای کاربران عادی
 PV_WELCOME_TEXT = """درود ✨
 کلن بزرگ 𓄂SAMBAH𓆃 عضو گیری میکند 
 «*سمباح:سازمان مبارزه با بی اخلاقی و بی حیایی* »
@@ -76,13 +75,8 @@ PV_WELCOME_TEXT = """درود ✨
 💸آموزش برداشت خودکار معدن
 💹قوی کردن اکانت 
 🔮رسیدن به کریستال 
-✨برای عضویت و سوالات درباره کلن به آیدی های زیر مراجعه کنید:
+✨برای عضویت و سوالات درباره کلن به دکمه‌های زیر مراجعه کنید:"""
 
-@StarWarFrg_RoBot (ربات بازی)
-@SAMBAHY (آیدی جهت عضویت در کلن)
-@mmdrza168 (آیدی جهت عضویت در کلن)"""
-
-# متن قوانین برای فیلم خوش‌آمدگویی
 caption_template = """درود {name} ✨
 اگه تو واحد B هستی حتما یکی از سلاطینی🙌
 
@@ -114,14 +108,10 @@ caption_template = """درود {name} ✨
 
 admin_states = {}
 
-# تابع چک کردن ساعت (به وقت ایران)
 def is_link_time_blocked():
-    # ساعت ایران (UTC+3:30)
     iran_tz = timezone(timedelta(hours=3, minutes=30))
     now = datetime.now(iran_tz)
     hour = now.hour
-    
-    # از ساعت ۲۳ شب (۱۱) تا ۱۱ صبح (۱۱)
     if hour >= 23 or hour < 11:
         return True
     return False
@@ -166,7 +156,6 @@ def get_link(chat_id):
     return current_links.get(chat_id, "https://ble.ir/")
 
 def get_welcome_keyboard():
-    # اگه ساعت ممنوعه باشه، کیبورد خالی برمی‌گردونه (یعنی دکمه‌ای نمیاد)
     if is_link_time_blocked():
         return json.dumps({"inline_keyboard": []})
         
@@ -192,6 +181,15 @@ def get_links_keyboard():
             [{"text": '🌚 پیام امیرعلی', "url": get_link(CHAT_ID_AMIRALI)}],
             [{"text": '🌚 پیام مجید', "url": get_link(CHAT_ID_MAJID)}],
             [{"text": '🌚 پیام تیتاپی ها', "url": get_link(CHAT_ID_TITAP)}]
+        ]
+    }, ensure_ascii=False)
+
+def get_pv_keyboard():
+    return json.dumps({
+        "inline_keyboard": [
+            [{"text": '🎮 ربات بازی (StarWar)', "url": "https://ble.ir/StarWarFrg_RoBot"}],
+            [{"text": 'جهت عضویت در کلن', "url": "https://ble.ir/SAMBAHY"}],
+            [{"text": 'جهت عضویت در کلن', "url": "https://ble.ir/mmdrza168"}]
         ]
     }, ensure_ascii=False)
 
@@ -250,15 +248,16 @@ while True:
                     if not msg.get("from", {}).get("is_bot"):
                         save_user(user_id)
                     
-                    # --- منطق پیوی (ادمین و کاربر عادی) ---
                     if chat_id == user_id:
-                        # اگه کاربر عادی بود، پیام خوش‌آمد پیوی رو بفرست
                         if user_id not in BOT_ADMINS:
                             if "text" in msg and msg["text"].strip() == '/start':
-                                send_request("sendMessage", {"chat_id": chat_id, "text": PV_WELCOME_TEXT})
+                                send_request("sendMessage", {
+                                    "chat_id": chat_id, 
+                                    "text": PV_WELCOME_TEXT, 
+                                    "reply_markup": get_pv_keyboard()
+                                })
                             continue 
                         
-                        # اگه ادمین بود
                         if "text" in msg and msg["text"].strip() in ['/start', 'پنل', '/panel']:
                             kb = json.dumps({
                                 "inline_keyboard": [
@@ -269,7 +268,6 @@ while True:
                             send_request("sendMessage", {"chat_id": chat_id, "text": "👑 **پنل مدیریت**\nخوش آمدید ادمین عزیز.", "reply_markup": kb, "parse_mode": "Markdown"})
                             continue
 
-                    # بررسی وضعیت پنل ادمین
                     if user_id in admin_states:
                         state = admin_states[user_id]
                         
@@ -317,11 +315,9 @@ while True:
                             del admin_states[user_id]
                             continue
 
-                    # --- دستورات توی گپ ---
                     if "text" in msg:
                         text = msg["text"].strip()
                         
-                        # دستور لینک‌ها با چک کردن ساعت
                         if text in ['لینک', 'لینک ها'] and chat_id == CHAT_ID_SAMBAH_B:
                             if is_link_time_blocked():
                                 send_request("sendMessage", {"chat_id": chat_id, "text": "⏰ دریافت لینک از ساعت ۲۳ الی ۱۱ ممنوع است."})
@@ -333,7 +329,6 @@ while True:
                                     "reply_markup": get_links_keyboard()
                                 })
                             
-                        # دستور باطل کردن لینک‌ها
                         if 'باطل کردن لینک' in text and chat_id == CHAT_ID_SAMBAH_B:
                             if not is_admin(chat_id, user_id): continue
                             
@@ -351,7 +346,6 @@ while True:
                             send_request("sendMessage", {"chat_id": user_id, "text": report, "parse_mode": "Markdown"})
                             send_request("sendMessage", {"chat_id": chat_id, "text": "✅ **لینک‌ها باطل شدند. گزارش به پیوی شما ارسال شد.**", "parse_mode": "Markdown"})
 
-                # --- پردازش دکمه‌های شیشه‌ای ---
                 if "callback_query" in update:
                     cq = update["callback_query"]
                     cq_id = cq["id"]
@@ -400,7 +394,6 @@ while True:
 
                     continue
 
-                # --- خوش‌آمدگویی ---
                 if "message" in update and "new_chat_members" in update["message"]:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
