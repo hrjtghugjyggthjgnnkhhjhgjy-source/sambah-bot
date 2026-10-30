@@ -2,9 +2,10 @@ import os
 
 # 🔐 توکن
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-DEFAULT_VIDEO_ID = "2065233217:421082582933511939:1:c68360172d75800342a475074d4a4b264b7d474003f6d08c1c6a2f3cfa2833b7"
+DEFAULT_VIDEO_ID = "YOUR_DEFAULT_VIDEO_ID_HERE" 
 
-# 🎯 آیدی عددی گپ‌ها
+# 🎯 آیدی عددی گپ‌ها و کانال جدید
+CHAT_ID_NEW_CHANNEL = '4504156170' # 🆕 کانال (اول لیست)
 CHAT_ID_SAMBAH_B = '4884670320'
 CHAT_ID_ETTELA_B = '5900955714'
 CHAT_ID_SAMBAH_A = '4652272518'
@@ -19,7 +20,9 @@ CHAT_ID_TITAP = '5562715565'
 BLOCKED_ROBOTS = ['940993529']
 BOT_ADMINS = ['724704269', '566594483', '2065233217']
 
+# 🔗 ترتیب دکمه‌های شیشه‌ای (کانال اول)
 CHATS_INFO = {
+    CHAT_ID_NEW_CHANNEL: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐂𝐥𝐚𝐧 𝐍𝐞𝐰𝐬𓆃",
     CHAT_ID_SAMBAH_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)",
     CHAT_ID_ETTELA_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐁)",
     CHAT_ID_SAMBAH_A: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐀)",
@@ -34,18 +37,21 @@ CHATS_INFO = {
 
 ALLOWED_CHATS = list(CHATS_INFO.keys())
 
-FALLBACK_LINK_SAMBAH_B = "https://ble.ir/join/4F2HQJ3rpD"
-FALLBACK_LINK_ETTELA_B = "https://ble.ir/join/4zejnKnWu5"
-FALLBACK_LINK_SAMBAH_A = "https://ble.ir/join/83tUiWjnM7"
-FALLBACK_LINK_ETTELA_A = "https://ble.ir/join/"
-FALLBACK_LINK_HAMALAT = "https://ble.ir/join/JA8nUskQGD"
-FALLBACK_LINK_DOORHAMI = "https://ble.ir/join/8wN5aYsMf2"
-FALLBACK_LINK_VORUDI = "https://ble.ir/join/2ECrbAhGsE"
-FALLBACK_LINK_AMIRALI = "https://ble.ir/join/AvWobZ1w2R"
-FALLBACK_LINK_MAJID = "https://ble.ir/join/2PvmzANtGf"
-FALLBACK_LINK_TITAP = "https://ble.ir/join/CaKiHc9jYm"
+# 🖇 لینک‌های پشتیبان
+FALLBACK_LINK_NEW_CHANNEL = "https://ble.ir/SambahClanNews" # 🔗 لینک کانال جدید
+FALLBACK_LINK_SAMBAH_B = "https://ble.ir/join/Bnx2pznhmn"
+FALLBACK_LINK_ETTELA_B = "https://ble.ir/join/rTeyNHWLyv"
+FALLBACK_LINK_SAMBAH_A = "https://ble.ir/join/tyVXNUt4XH"
+FALLBACK_LINK_ETTELA_A = "https://ble.ir/join/B8uevmTQKm"
+FALLBACK_LINK_HAMALAT = "https://ble.ir/join/AdxNvDCS8b"
+FALLBACK_LINK_DOORHAMI = "https://ble.ir/join/BLpdsfohEX"
+FALLBACK_LINK_VORUDI = "https://ble.ir/join/43dKfW5Xba"
+FALLBACK_LINK_AMIRALI = "https://ble.ir/join/HybQWwaPKA"
+FALLBACK_LINK_MAJID = "https://ble.ir/join/3hFtqGeiu7"
+FALLBACK_LINK_TITAP = "https://ble.ir/join/46FHFt2eR9"
 
 current_links = {
+    CHAT_ID_NEW_CHANNEL: FALLBACK_LINK_NEW_CHANNEL,
     CHAT_ID_SAMBAH_B: FALLBACK_LINK_SAMBAH_B,
     CHAT_ID_ETTELA_B: FALLBACK_LINK_ETTELA_B,
     CHAT_ID_SAMBAH_A: FALLBACK_LINK_SAMBAH_A,
