@@ -103,13 +103,13 @@ def get_links_keyboard():
             [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐀)', "url": get_link(CHAT_ID_ETTELA_A)}],
             [{"text": '⚔️𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬⚔️', "url": get_link(CHAT_ID_HAMALAT)}],
             [{"text": '💎𝐒𝐀𝐌𝐁𝐀𝐇 𝐊𝐀𝐃𝐄𝐇💎', "url": "https://ble.ir/SAMBAHKADEH"}],
-            [{"text": '🚷𝗦𝗮𝗺𝗯𝗮 𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆🚷', "url": get_link(CHAT_ID_VORUDI)}],
+            [{"text": '🚷𝐒𝐚𝐦𝐛𝐚 𝐒𝐞𝐜𝐮𝐫𝐢𝐭𝐲🚷', "url": get_link(CHAT_ID_VORUDI)}],
             [{"text": '𝐀𝐦𝐢𝐫𝐀𝐥𝐢 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_AMIRALI)}],
             [{"text": '𝐌𝐚𝐣𝐢𝐝 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_MAJID)}],
             [{"text": '𝐓𝐢𝐭𝐚𝐩 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_TITAP)}],
-            # 👇 دکمه‌های جدید ربات‌ها
+            # 👇 دکمه‌های ربات‌ها
             [{"text": '𓄂𝐎𝐟𝐟𝐢𝐜𝐢𝐚𝐥 𝐒𝐀𝐌𝐁𝐀𝐇 𝐂𝐨𝐥𝐨𝐧𝐲 𝐁𝐨𝐭𓆃', "url": "https://ble.ir/SAMBAHBot"}],
-            [{"text": '💎𝐒𝐀𝐌𝐁𝐀𝐇𝐊𝐀𝐃𝐄𝐇𝐁𝐨𝐭💎, "url": "https://ble.ir/SAMBAHKADEHBot"}]
+            [{"text": '💎𝐒𝐀𝐌𝐁𝐀𝐇𝐊𝐀𝐃𝐄𝐇𝐁𝐨𝐭💎', "url": "https://ble.ir/SAMBAHKADEHBot"}]
         ]
     }, ensure_ascii=False)
 
