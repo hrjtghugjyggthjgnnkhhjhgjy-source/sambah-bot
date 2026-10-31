@@ -89,23 +89,27 @@ def get_welcome_keyboard():
             [{"text": '💬 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)', "url": get_link(CHAT_ID_SAMBAH_B)}],
             [{"text": '🔔 𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬 (𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
             [{"text": '⚔️ 𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬', "url": get_link(CHAT_ID_HAMALAT)}],
-            [{"text": '🎊 𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐚𝐦𝐞𝐬', "url": get_link(CHAT_ID_DOORHAMI)}]
+            [{"text": '💎𝐒𝐀𝐌𝐁𝐀𝐇 𝐊𝐀𝐃𝐄𝐇💎', "url": get_link(CHAT_ID_DOORHAMI)}]
         ]
     }, ensure_ascii=False)
 
 def get_links_keyboard():
     return json.dumps({
         "inline_keyboard": [
+            [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐂𝐥𝐚𝐧 𝐍𝐞𝐰𝐬𓆃', "url": get_link(CHAT_ID_NEW_CHANNEL)}],
             [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)', "url": get_link(CHAT_ID_SAMBAH_B)}],
             [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐁)', "url": get_link(CHAT_ID_ETTELA_B)}],
             [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐀)', "url": get_link(CHAT_ID_SAMBAH_A)}],
             [{"text": '𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐀)', "url": get_link(CHAT_ID_ETTELA_A)}],
             [{"text": '⚔️𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬⚔️', "url": get_link(CHAT_ID_HAMALAT)}],
-            [{"text": '🎊𝗦𝗮𝗺𝗯𝗮𝗵 𝗚𝗮𝗺𝗲𝘀🎊', "url": get_link(CHAT_ID_DOORHAMI)}],
+            [{"text": '💎𝐒𝐀𝐌𝐁𝐀𝐇 𝐊𝐀𝐃𝐄𝐇💎', "url": "https://ble.ir/SAMBAHKADEH"}],
             [{"text": '🚷𝗦𝗮𝗺𝗯𝗮 𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆🚷', "url": get_link(CHAT_ID_VORUDI)}],
             [{"text": '𝐀𝐦𝐢𝐫𝐀𝐥𝐢 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_AMIRALI)}],
             [{"text": '𝐌𝐚𝐣𝐢𝐝 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_MAJID)}],
-            [{"text": '𝐓𝐢𝐭𝐚𝐩 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_TITAP)}]
+            [{"text": '𝐓𝐢𝐭𝐚𝐩 𝐂𝐡𝐚𝐭', "url": get_link(CHAT_ID_TITAP)}],
+            # 👇 دکمه‌های جدید ربات‌ها
+            [{"text": '𓄂𝐎𝐟𝐟𝐢𝐜𝐢𝐚𝐥 𝐒𝐀𝐌𝐁𝐀𝐇 𝐂𝐨𝐥𝐨𝐧𝐲 𝐁𝐨𝐭𓆃', "url": "https://ble.ir/SAMBAHBot"}],
+            [{"text": '💎𝐒𝐀𝐌𝐁𝐀𝐇𝐊𝐀𝐃𝐄𝐇𝐁𝐨𝐭💎, "url": "https://ble.ir/SAMBAHKADEHBot"}]
         ]
     }, ensure_ascii=False)
 
@@ -114,7 +118,22 @@ def get_pv_keyboard():
         "inline_keyboard": [
             [{"text": '🎮 ربات بازی (StarWar)', "url": "https://ble.ir/StarWarFrg_RoBot"}],
             [{"text": '📩 جهت عضویت در کلن پیام دهید (۱)', "url": "https://ble.ir/SAMBAHY"}],
-            [{"text": '📩 جهت عضویت در کلن پیام دهید (۲)', "url": "https://ble.ir/mmdrza168"}]
+            [{"text": '📩 جهت عضویت در کلن پیام دهید (۲)', "url": "https://ble.ir/mmdrza168"}],
+            [{"text": '📝 ارسال گزارش/مشخصات', "callback_data": "start_report"}]
+        ]
+    }, ensure_ascii=False)
+
+def get_admin_reply_keyboard(report_id):
+    return json.dumps({
+        "inline_keyboard": [
+            [{"text": "↩️ پاسخ به این گزارش", "callback_data": f"reply_report_{report_id}"}]
+        ]
+    }, ensure_ascii=False)
+
+def get_user_reply_keyboard(report_id):
+    return json.dumps({
+        "inline_keyboard": [
+            [{"text": "↩️ پاسخ به ادمین", "callback_data": f"reply_admin_{report_id}"}]
         ]
     }, ensure_ascii=False)
 
