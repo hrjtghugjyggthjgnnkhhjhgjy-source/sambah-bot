@@ -4,8 +4,8 @@ import os
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 DEFAULT_VIDEO_ID = "YOUR_DEFAULT_VIDEO_ID_HERE" 
 
-# 🎯 آیدی عددی گپ‌ها و کانال جدید
-CHAT_ID_NEW_CHANNEL = '4504156170' # 🆕 کانال (اول لیست)
+# 🎯 آیدی عددی گپ‌ها و کانال
+CHAT_ID_NEW_CHANNEL = '4504156170'
 CHAT_ID_SAMBAH_B = '4884670320'
 CHAT_ID_ETTELA_B = '5900955714'
 CHAT_ID_SAMBAH_A = '4652272518'
@@ -20,16 +20,16 @@ CHAT_ID_TITAP = '5562715565'
 BLOCKED_ROBOTS = ['940993529']
 BOT_ADMINS = ['724704269', '566594483', '2065233217']
 
-# 🔗 ترتیب دکمه‌های شیشه‌ای (کانال اول)
+# 🆕 اسم گپ‌ها با فونت توپُر (𝐁𝐨𝐥𝐝)
 CHATS_INFO = {
     CHAT_ID_NEW_CHANNEL: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐂𝐥𝐚𝐧 𝐍𝐞𝐰𝐬𓆃",
-    CHAT_ID_SAMBAH_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)",
+    CHAT_ID_SAMBAH_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐁)", 
     CHAT_ID_ETTELA_B: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐁)",
     CHAT_ID_SAMBAH_A: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐆𝐓 (𝐀)",
     CHAT_ID_ETTELA_A: "𓄂𝐒𝐚𝐦𝐛𝐚𝐡 𝐍𝐞𝐰𝐬🔔 (𝐀)",
     CHAT_ID_HAMALAT: "⚔️𝐒𝐚𝐦𝐛𝐚𝐡 𝐀𝐭𝐭𝐚𝐜𝐤𝐬⚔️",
-    CHAT_ID_DOORHAMI: "🎊𝗦𝗮𝗺𝗯𝗮𝗵 𝗚𝗮𝗺𝗲𝘀🎊",
-    CHAT_ID_VORUDI: "🚷𝗦𝗮𝗺𝗯𝗮 𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆🚷",
+    CHAT_ID_DOORHAMI: "💎𝐒𝐀𝐌𝐁𝐀𝐇 𝐊𝐀𝐃𝐄𝐇💎",
+    CHAT_ID_VORUDI: "🚷𝐒𝐚𝐦𝐛𝐚 𝐒𝐞𝐜𝐮𝐫𝐢𝐭𝐲🚷",
     CHAT_ID_AMIRALI: "𝐀𝐦𝐢𝐫𝐀𝐥𝐢 𝐂𝐡𝐚𝐭",
     CHAT_ID_MAJID: "𝐌𝐚𝐣𝐢𝐝 𝐂𝐡𝐚𝐭",
     CHAT_ID_TITAP: "𝐓𝐢𝐭𝐚𝐩 𝐂𝐡𝐚𝐭"
@@ -37,8 +37,8 @@ CHATS_INFO = {
 
 ALLOWED_CHATS = list(CHATS_INFO.keys())
 
-# 🖇 لینک‌های پشتیبان
-FALLBACK_LINK_NEW_CHANNEL = "https://ble.ir/SambahClanNews" # 🔗 لینک کانال جدید
+# لینک‌های پشتیبان
+FALLBACK_LINK_NEW_CHANNEL = "https://ble.ir/SambahClanNews"
 FALLBACK_LINK_SAMBAH_B = "https://ble.ir/join/Bnx2pznhmn"
 FALLBACK_LINK_ETTELA_B = "https://ble.ir/join/rTeyNHWLyv"
 FALLBACK_LINK_SAMBAH_A = "https://ble.ir/join/tyVXNUt4XH"
@@ -66,6 +66,9 @@ current_links = {
 
 LINKS_LOCKED = False
 admin_states = {}
+
+WAITING_FOR_REPORT = {} 
+REPORTS_STORAGE = {} 
 
 PV_WELCOME_TEXT = """درود ✨
 کلن بزرگ 𓄂SAMBAH𓆃 عضو گیری میکند 
