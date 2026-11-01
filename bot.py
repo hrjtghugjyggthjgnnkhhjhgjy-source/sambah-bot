@@ -1,6 +1,7 @@
 import time
 import os
 import json
+import uuid
 from config import *
 from helpers import *
 from game import games, get_board_keyboard, check_winner
@@ -16,6 +17,7 @@ WAITING_FOR_USER_REPLY = {}
 REPORTS_STORAGE = {} 
 report_counter = 0 
 
+# 🎬 خواندن آیدی فیلم از فایل (اگه فایل نبود، از DEFAULT_VIDEO_ID استفاده میشه)
 saved_video_id = DEFAULT_VIDEO_ID
 if os.path.exists(VIDEO_CACHE_FILE):
     with open(VIDEO_CACHE_FILE, 'r') as f:
@@ -47,7 +49,7 @@ while True:
                     user_id = str(msg["from"]["id"])
                     user_name = msg["from"].get("first_name", "Player")
                     
-                    # 🚪 سیستم خروج خودکار از گپ‌های غیرمجاز (به جز پیوی خود ربات)
+                    # 🚪 سیستم خروج خودکار از گپ‌های غیرمجاز
                     if chat_id not in ALLOWED_CHATS and chat_id != user_id:
                         print(f"⚠️ ربات به گپ غیرمجاز {chat_id} اضافه شد. در حال خروج...")
                         send_request("leaveChat", {"chat_id": chat_id})
