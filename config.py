@@ -2,7 +2,7 @@ import os
 
 # 🔐 توکن
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-DEFAULT_VIDEO_ID = "YOUR_DEFAULT_VIDEO_ID_HERE" 
+DEFAULT_VIDEO_ID = "2065233217:-3073941890575163648:1:ce0416637be3d079d78a0c4662b122844c174c1f29cc90d5"
 
 # 🎯 آیدی عددی گپ‌ها و کانال
 CHAT_ID_NEW_CHANNEL = '4504156170'
@@ -71,8 +71,7 @@ WAITING_FOR_REPORT = {}
 REPORTS_STORAGE = {} 
 
 PV_WELCOME_TEXT = """درود ✨
-کلن بزرگ 𓄂SAMBAH𓆃 عضو گیری میکند 
-«*سمباح:سازمان مبارزه با بی اخلاقی و بی حیایی* »
+𓄂SAMBAH𓆃عضو گیری میکند کلن بزرگ
 مهم نیست امروز شروع کرده باشی در هر سطحی هر لولی حتی تازه کارترین هارو قوی میکنیم 🚀
 
 💸آموزش برداشت خودکار معدن
