@@ -47,7 +47,7 @@ while True:
                     user_id = str(msg["from"]["id"])
                     user_name = msg["from"].get("first_name", "Player")
                     
-                    # 🚪 سیستم خروج خودکار از گپ‌های غیرمجاز (فقط اگه پیام از ربات نباشه)
+                    # 🚪 سیستم خروج خودکار از گپ‌های غیرمجاز (به جز پیوی خود ربات)
                     if chat_id not in ALLOWED_CHATS and chat_id != user_id:
                         print(f"⚠️ ربات به گپ غیرمجاز {chat_id} اضافه شد. در حال خروج...")
                         send_request("leaveChat", {"chat_id": chat_id})
@@ -358,7 +358,7 @@ while True:
                         admin_states[user_id] = {'step': 'get_broadcast_text', 'target': target_cid}
                         send_request("sendMessage", {"chat_id": user_id, "text": f"📝 متن رو بفرست:"})
 
-                # 🎉 خوش‌آمدگویی و سیستم خروج خودکار
+                # 🎉 خوش‌آمدگویی (فقط برای گپ سمباح B)
                 if "message" in update and "new_chat_members" in update["message"]:
                     msg = update["message"]
                     chat_id = str(msg["chat"]["id"])
@@ -367,7 +367,8 @@ while True:
                         send_request("leaveChat", {"chat_id": chat_id})
                         continue
                         
-                    if chat_id == CHAT_ID_SAMBAH_B or chat_id == CHAT_ID_SAMBAH_A:
+                    # 🎯 فقط و فقط توی گپ B خوش‌آمد بگو
+                    if chat_id == CHAT_ID_SAMBAH_B:
                         current_video_id = DEFAULT_VIDEO_ID
                         if os.path.exists(VIDEO_CACHE_FILE):
                             with open(VIDEO_CACHE_FILE, 'r') as f:
